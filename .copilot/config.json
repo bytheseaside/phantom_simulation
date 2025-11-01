@@ -1,0 +1,7 @@
+{
+  "context": [
+    "Always check if the micromamba environment is activated before running any commands, if not, activate it with 'micromamba activate env'."
+
+  ],
+  "tone": "technical and concise"
+}
