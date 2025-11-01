@@ -1,5 +1,0 @@
-# Ignore large or generated files
-*.vtu
-*.xdmf
-*.msh
-*.csv
