@@ -122,6 +122,43 @@ python3 -m src.selection_algorithms.algorithm_G_d_optimal.select --regularizatio
 python3 -m src.selection_algorithms.algorithm_G_d_optimal.select --regularization 1e-4
 echo ""
 
+# Algorithm H - RRQR: different max dipoles
+echo "=== Algorithm H: RRQR ==="
+echo "Strict (fewer dipoles)..."
+python3 -m src.selection_algorithms.algorithm_H_rrqr.select --n-dipoles-max 10
+python3 -m src.selection_algorithms.algorithm_H_rrqr.select --n-dipoles-max 12
+python3 -m src.selection_algorithms.algorithm_H_rrqr.select --n-dipoles-max 14
+
+echo "Medium..."
+python3 -m src.selection_algorithms.algorithm_H_rrqr.select --n-dipoles-max 16
+python3 -m src.selection_algorithms.algorithm_H_rrqr.select --n-dipoles-max 18
+python3 -m src.selection_algorithms.algorithm_H_rrqr.select --n-dipoles-max 20
+
+echo "Lax (more dipoles)..."
+python3 -m src.selection_algorithms.algorithm_H_rrqr.select --n-dipoles-max 22
+python3 -m src.selection_algorithms.algorithm_H_rrqr.select --n-dipoles-max 25
+echo ""
+
+# Algorithm I - Hybrid: varied preselect, final, and r_keep
+echo "=== Algorithm I: Hybrid Greedy→SVD ==="
+echo "Conservative preselect..."
+python3 -m src.selection_algorithms.algorithm_I_hybrid.select --n-preselect 15 --n-final 12 --r-keep 8
+python3 -m src.selection_algorithms.algorithm_I_hybrid.select --n-preselect 18 --n-final 14 --r-keep 10
+
+echo "Default..."
+python3 -m src.selection_algorithms.algorithm_I_hybrid.select --n-preselect 20 --n-final 16 --r-keep 10
+
+echo "Aggressive preselect..."
+python3 -m src.selection_algorithms.algorithm_I_hybrid.select --n-preselect 25 --n-final 18 --r-keep 12
+python3 -m src.selection_algorithms.algorithm_I_hybrid.select --n-preselect 25 --n-final 20 --r-keep 15
+
+echo "Different r_keep..."
+python3 -m src.selection_algorithms.algorithm_I_hybrid.select --n-preselect 20 --n-final 16 --r-keep 5
+python3 -m src.selection_algorithms.algorithm_I_hybrid.select --n-preselect 20 --n-final 16 --r-keep 8
+python3 -m src.selection_algorithms.algorithm_I_hybrid.select --n-preselect 20 --n-final 16 --r-keep 12
+python3 -m src.selection_algorithms.algorithm_I_hybrid.select --n-preselect 20 --n-final 16 --r-keep 15
+echo ""
+
 echo "=========================================="
 echo "All cases completed!"
 echo "=========================================="

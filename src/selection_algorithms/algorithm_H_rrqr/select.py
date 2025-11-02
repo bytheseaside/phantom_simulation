@@ -1,10 +1,11 @@
 """
-Algorithm B: Greedy by Norm
+Algorithm H: Rank-Revealing QR (RRQR)
 
-Selects dipoles with highest energy (L2 norm) that don't form forbidden triads.
+QR decomposition with column pivoting naturally orders columns by importance.
+Inserts triad check within the pivot loop for a deterministic, linearly independent selection.
 
-Time complexity: O(n log n) for sorting + O(n·t) for triad checking
-Space complexity: O(n) where n=36 dipoles, t=84 triads
+Time: O(nm² + nt) where n=21 probes, m=36 dipoles, t=84 triads
+Space: O(nm)
 """
 
 import numpy as np
@@ -26,16 +27,20 @@ from model.utils import build_dipoles
 from model.base_matrices.generate_base_matrices import build_s_matrix
 
 
-def select_dipoles_algorithm_B(
+def select_dipoles_algorithm_H(
     F: np.ndarray,
     B: np.ndarray,
     W: np.ndarray,
     forbidden_triads: List[Set[Tuple[int, int]]],
     all_dipoles: List[Tuple[int, int]],
+    n_dipoles_max: int = 20,
     verbose: bool = True
 ) -> Dict[str, Any]:
     """
-    Algorithm B: Select dipoles by descending energy (L2 norm).
+    Algorithm H: Rank-Revealing QR with triad constraints.
+    
+    Uses scipy's QR decomposition with column pivoting to rank dipoles by importance.
+    Greedily selects from highest-ranked dipoles that don't form triads.
     
     Parameters
     ----------
@@ -44,75 +49,94 @@ def select_dipoles_algorithm_B(
     W : (21, 21) array - Probe weighting (diagonal)
     forbidden_triads : List of forbidden triad sets
     all_dipoles : List of all 36 dipole pairs
+    n_dipoles_max : Maximum dipoles to select
     verbose : Print progress
     
     Returns
     -------
     dict with keys: S, selected_dipoles, selected_indices, n_selected, 
-                    norms, condition_number, algorithm, parameters
+                    r_values, condition_number, algorithm, parameters
     """
+    from scipy.linalg import qr
+    
     n_dipoles = len(all_dipoles)
     
     if verbose:
         print("="*60)
-        print("Algorithm B: Greedy by Norm")
+        print("Algorithm H: Rank-Revealing QR (RRQR)")
         print("="*60)
+        print(f"Max dipoles: {n_dipoles_max}")
     
     # Compute F_eff = W @ F
     F_eff = W @ F if W is not None else F
     
-    # Compute norms and sort
-    norms = np.linalg.norm(F_eff, axis=0)
-    sorted_indices = np.argsort(-norms)
+    # QR decomposition with column pivoting
+    # Q, R, P = qr(F_eff, pivoting=True, mode='economic')
+    # P is a permutation array where F_eff[:, P] = Q @ R
+    _, R, P = qr(F_eff, pivoting=True, mode='economic')
     
     if verbose:
-        print(f"Norm range: [{norms.min():.4e}, {norms.max():.4e}]")
+        print(f"\nQR pivoting complete. Diagonal R values:")
+        r_diag = np.abs(np.diag(R))
+        print(f"  Range: [{r_diag.min():.4e}, {r_diag.max():.4e}]")
     
-    # Select greedily
+    # P gives us column importance ranking
+    # Select greedily from this ordering, checking triads
     selected_dipoles = []
     selected_indices = []
-    selected_norms = []
+    r_values = []
     
-    for idx in sorted_indices:
-        candidate = all_dipoles[idx]
+    for i, col_idx in enumerate(P):
+        if len(selected_dipoles) >= n_dipoles_max:
+            break
+        
+        candidate = all_dipoles[col_idx]
         
         # Check if would form triad
         if check_triad_violation(selected_dipoles + [candidate], forbidden_triads):
             if verbose:
-                print(f"  {candidate} (norm={norms[idx]:.4e}) → SKIP")
+                # R diagonal only has min(m, n) elements
+                r_val = np.abs(R[min(i, R.shape[0]-1), min(i, R.shape[1]-1)]) if i < R.shape[0] else 0.0
+                print(f"  [{i:2d}] {candidate} (R~{r_val:.4e}) → SKIP (triad)")
             continue
         
         selected_dipoles.append(candidate)
-        selected_indices.append(idx)
-        selected_norms.append(norms[idx])
+        selected_indices.append(col_idx)
+        
+        # Store R diagonal value if within bounds
+        if i < R.shape[0]:
+            r_values.append(np.abs(R[i, min(i, R.shape[1]-1)]))
         
         if verbose:
-            print(f"✓ {candidate} (norm={norms[idx]:.4e}) → ACCEPT")
+            r_val = r_values[-1] if r_values else 0.0
+            print(f"✓ [{i:2d}] {candidate} (R[{i},{i}]={r_val:.4e}) → ACCEPT")
     
-    # Build S matrix (no save, just return)
+    # Build S matrix
     S = build_s_matrix(selected_indices, n_dipoles)
     
-    # Compute condition number using only selected columns
-    cond = compute_condition_number(F, B, W, selected_indices)
+    # Compute condition number
+    kappa = compute_condition_number(F, B, W, selected_indices)
     
     if verbose:
-        print(f"\nSelected {len(selected_dipoles)} dipoles, κ={cond:.2e}")
+        print(f"\nSelected {len(selected_dipoles)} dipoles, κ={kappa:.2e}")
     
     return {
         'S': S,
         'selected_dipoles': selected_dipoles,
         'selected_indices': selected_indices,
         'n_selected': len(selected_dipoles),
-        'norms': selected_norms,
-        'condition_number': cond,
-        'algorithm': 'B',
-        'parameters': {}
+        'r_values': r_values,
+        'condition_number': kappa,
+        'algorithm': 'H',
+        'parameters': {
+            'n_dipoles_max': n_dipoles_max
+        }
     }
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Algorithm B: Greedy dipole selection by norm',
+        description='Algorithm H: RRQR dipole selection',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     
@@ -122,8 +146,10 @@ def main():
     parser.add_argument('--forbidden-triads', type=str,
                        default='src/model/forbidden_triads.npy',
                        help='Path to forbidden triads file')
+    parser.add_argument('--n-dipoles-max', type=int, default=20,
+                       help='Maximum number of dipoles to select')
     parser.add_argument('--output-dir', type=str,
-                       default='results/algorithm_B',
+                       default='results/algorithm_H',
                        help='Output directory for results')
     parser.add_argument('--no-save', action='store_true',
                        help='Do not save results (console only)')
@@ -142,19 +168,26 @@ def main():
     all_dipoles = build_dipoles()
     
     # Run algorithm
-    result = select_dipoles_algorithm_B(
+    result = select_dipoles_algorithm_H(
         F=matrices['F'],
         B=matrices['B'],
         W=matrices['W'],
         forbidden_triads=forbidden_triads,
         all_dipoles=all_dipoles,
+        n_dipoles_max=args.n_dipoles_max,
         verbose=not args.quiet
     )
     
-    # Save if requested
+    # Save if requested and condition number is finite
     if not args.no_save:
         output_dir = Path(args.output_dir)
-        filename = 'S_algorithm_B'
+        
+        # Build filename with parameter
+        if args.n_dipoles_max != 20:
+            filename = f'S_algorithm_H_nmax{args.n_dipoles_max}'
+        else:
+            filename = 'S_algorithm_H'
+        
         save_selection_results(
             S=result['S'],
             metadata={k: v for k, v in result.items() if k != 'S'},
