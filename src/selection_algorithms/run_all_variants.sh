@@ -19,8 +19,8 @@ echo ""
 
 # Algorithm C - different modes and r_keep
 echo "=== Algorithm C: SVD Leverage ==="
-python3 -m src.selection_algorithms.algorithm_C_svd_leverage.select --r-keep 21
-python3 -m src.selection_algorithms.algorithm_C_svd_leverage.select --selection-mode top_n
+python3 -m src.selection_algorithms.algorithm_C_svd_leverage.select --r-keep 15
+python3 -m src.selection_algorithms.algorithm_C_svd_leverage.select  --r-keep 15 --selection-mode top_n
 echo ""
 
 # Algorithm D - different rho_max
