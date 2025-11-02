@@ -19,6 +19,7 @@ from selection_algorithms.common import (
     load_base_matrices,
     load_forbidden_triads,
     check_triad_violation,
+    compute_condition_number,
     save_selection_results
 )
 from model.utils import build_dipoles
@@ -91,13 +92,8 @@ def select_dipoles_algorithm_B(
     # Build S matrix (no save, just return)
     S = build_s_matrix(selected_indices, n_dipoles)
     
-    # Compute condition number: κ(M) where M = W F S B
-    M = F @ S @ B
-    if W is not None:
-        M = W @ M
-    sigma = np.linalg.svd(M, compute_uv=False)
-    sigma_nz = sigma[sigma > 1e-10]
-    cond = sigma_nz[0] / sigma_nz[-1] if len(sigma_nz) > 0 else np.inf
+    # Compute condition number using only selected columns
+    cond = compute_condition_number(F, B, W, selected_indices)
     
     if verbose:
         print(f"\nSelected {len(selected_dipoles)} dipoles, κ={cond:.2e}")

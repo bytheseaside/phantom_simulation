@@ -20,6 +20,7 @@ from selection_algorithms.common import (
     load_base_matrices,
     load_forbidden_triads,
     check_triad_violation,
+    compute_condition_number,
     save_selection_results
 )
 from model.utils import build_dipoles
@@ -146,9 +147,7 @@ def select_dipoles_algorithm_G(
     
     # Final S and condition number
     S = build_s_matrix(selected_indices, n_dipoles)
-    M = F_eff @ S @ B
-    sigma_final = np.linalg.svd(M, compute_uv=False)
-    kappa_final = sigma_final[0] / sigma_final[-1] if sigma_final[-1] > 1e-14 else np.inf
+    kappa_final = compute_condition_number(F, B, W, selected_indices)
     
     if verbose:
         print(f"\nSelected {len(selected_dipoles)} dipoles")

@@ -47,6 +47,49 @@ def check_triad_violation(
     return False
 
 
+def compute_condition_number(
+    F: np.ndarray,
+    B: np.ndarray,
+    W: np.ndarray,
+    selected_indices: List[int]
+) -> float:
+    """
+    Compute condition number κ(M) where M = W·F_selected·B_selected.
+
+    Uses ONLY the selected columns of F (not the full S matrix with zeros to avoid singularities).
+
+    Parameters
+    ----------
+    F : (21, 36) array
+    B : (36, 9) array
+    W : (21, 21) array or None
+    selected_indices : list of column indices in F
+    
+    Returns
+    -------
+    float : condition number (np.inf if singular/empty)
+    """
+    if len(selected_indices) == 0:
+        return np.inf
+    
+    # Extract only selected columns of F
+    F_selected = F[:, selected_indices]
+    
+    # Compute M = W·F_selected·B
+    M = F_selected @ B[selected_indices, :]
+    if W is not None:
+        M = W @ M
+    
+    # Compute condition number via SVD
+    sigma = np.linalg.svd(M, compute_uv=False)
+    sigma_nz = sigma[sigma > 1e-10]
+    
+    if len(sigma_nz) == 0:
+        return np.inf
+    
+    return sigma_nz[0] / sigma_nz[-1]
+
+
 def save_selection_results(
     S: np.ndarray,
     metadata: Dict[str, Any],
@@ -55,6 +98,7 @@ def save_selection_results(
 ) -> None:
     """
     Save selection matrix S and metadata.
+    Only saves if condition_number is finite.
     
     Parameters
     ----------
@@ -67,6 +111,13 @@ def save_selection_results(
     filename : str
         Base filename (without extension)
     """
+    # Only save results when condition number is finite
+    cond = metadata.get('condition_number', None)
+    
+    if cond is None or not np.isfinite(cond):
+        print(f"Condition number not finite ({cond}) — skipping save for {filename}")
+        return
+    
     output_dir.mkdir(parents=True, exist_ok=True)
     
     # Save S matrix
