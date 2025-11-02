@@ -29,7 +29,7 @@ def build_w_matrix(col_weights: np.ndarray, out: Path) -> np.ndarray:
 
     return w_matrix
 
-def generate_b_matrix_from_pairs(pairs: list[tuple[int, int]], num_electrodes: int, out: Path) -> np.ndarray:
+def generate_b_matrix(pairs: list[tuple[int, int]], num_electrodes: int, out: Path) -> np.ndarray:
     """
     Generate the B matrix for dipoles based on a list of electrode pairs.
 
@@ -58,7 +58,7 @@ def generate_b_matrix_from_pairs(pairs: list[tuple[int, int]], num_electrodes: i
     for dipole_index, (a, b) in enumerate(pairs):
         if not (0 <= a < num_electrodes and 0 <= b < num_electrodes):
             raise ValueError(f"Electrode indices {a}, {b} are out of bounds for {num_electrodes} electrodes.")
-        # Decision taken: pair (a,b) means positive in X and negative in Y
+        # Convention: pair (a,b) means positive in X and negative in Y
         b_matrix[dipole_index, a] = 1  
         b_matrix[dipole_index, b] = -1
 
@@ -68,9 +68,10 @@ def generate_b_matrix_from_pairs(pairs: list[tuple[int, int]], num_electrodes: i
 
     return b_matrix
 
-def build_s_matrix(selected_columns: list[int], total_columns: int, out: Path) -> np.ndarray:
+def build_s_matrix(selected_columns: list[int], total_columns: int, out: Path = None) -> np.ndarray:
     """
     Build the S matrix (selection matrix) based on the selected columns.
+    Can optionally save to disk.
 
     Parameters
     ----------
@@ -78,8 +79,9 @@ def build_s_matrix(selected_columns: list[int], total_columns: int, out: Path) -
         A list of column indices to keep in the matrix.
     total_columns : int
         The total number of columns in the original matrix.
-    out : Path
+    out : Path, optional
         Path to save the resulting S matrix as a .npy file.
+        If None, matrix is not saved to disk.
 
     Returns
     -------
@@ -93,8 +95,9 @@ def build_s_matrix(selected_columns: list[int], total_columns: int, out: Path) -
     for col_index in selected_columns:
         s_matrix[col_index, col_index] = 1 
 
-    np.save(out, s_matrix)
-    print(f"S matrix saved to {out}")
+    if out is not None:
+        np.save(out, s_matrix)
+        print(f"S matrix saved to {out}")
 
     return s_matrix
 
