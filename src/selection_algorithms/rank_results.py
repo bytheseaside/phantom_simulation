@@ -232,7 +232,6 @@ def save_ranked_results(
 
 
 def main():
-    """CLI entry point."""
     parser = argparse.ArgumentParser(
         description='Rank algorithm results by custom scoring function',
         formatter_class=argparse.RawDescriptionHelpFormatter,
