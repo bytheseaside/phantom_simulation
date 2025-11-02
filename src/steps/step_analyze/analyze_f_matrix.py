@@ -183,7 +183,7 @@ def main():
     corr_matrix = compute_correlation_matrix(f_matrix)
 
     # Save correlation heatmap
-    case_names = [f"e{i}e{j}" for i in range(1, 10) for j in range(i + 1, 10)] # ORDERED LIST OF DIPOLES
+    case_names = [f"e{i}e{j}" for i in range(1, 9) for j in range(i + 1, 10)] # ORDERED LIST OF DIPOLES
     corr_heatmap_path = args.out / "correlation_heatmap.png"
     save_correlation_heatmap(corr_matrix, case_names, corr_heatmap_path, abs_val=args.abs_corr, annotate=args.annotate, fmt=args.fmt)
     print(f"  Saved: {corr_heatmap_path}")
