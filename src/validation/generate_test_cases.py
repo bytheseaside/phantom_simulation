@@ -142,7 +142,7 @@ Test case types:
     parser.add_argument('--output', type=Path, default=Path('test_cases.csv'),
                        help='Output CSV file path (default: test_cases.csv)')
     parser.add_argument('--v-range', type=str, default='0.001,0.050',
-                       help='Voltage range as min,max in Volts (default: 0.001,0.050 = 1-50 mV)')
+                       help='Voltage range as min,max in Volts (default: 0.001,0.050 = 1-50 mV). Can use negative values for dipole patterns.')
     parser.add_argument('--seed', type=int, default=42,
                        help='Random seed for reproducibility (default: 42)')
     
@@ -151,10 +151,10 @@ Test case types:
     # Parse voltage range
     try:
         v_min, v_max = map(float, args.v_range.split(','))
-        if v_min >= v_max or v_min < 0:
-            raise ValueError("Invalid voltage range")
+        if v_min >= v_max:
+            raise ValueError("v_min must be less than v_max")
     except Exception as e:
-        print("✗ Invalid --v-range format. Use: min,max (e.g., 0.001,0.050)")
+        print("✗ Invalid --v-range format. Use: min,max (e.g., 0.001,0.050 or -0.5,0.5)")
         print(f"  Error: {e}")
         return 1
     
