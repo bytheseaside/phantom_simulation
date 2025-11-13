@@ -91,7 +91,7 @@ ELECTRODE_NAMES_V = [f"v_{i}" for i in range(1, 10)]
 
 # Default conductivities (S/m) + env overrides
 SIGMA_GEL_DEFAULT = 0.33
-SIGMA_HEAD_DEFAULT = 0.02
+SIGMA_HEAD_DEFAULT = 5 # Effective value for "Protopasta" PLA C-doped phantom
 
 def _fenv(name: str, default: float) -> float:
     """
