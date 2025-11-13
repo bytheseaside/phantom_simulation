@@ -12,11 +12,21 @@
 # Default: regularization = 1e-8
 python -m src.selection_algorithms.algorithm_G_d_optimal.select
 
-# Custom regularization
-python -m src.selection_algorithms.algorithm_G_d_optimal.select --regularization 1e-6
+# Test regularization range (recommended)
+for reg in 1e-12 1e-10 1e-8 1e-6 1e-4; do
+  python -m src.selection_algorithms.algorithm_G_d_optimal.select --regularization $reg
+done
 
 # WARNING: Computationally expensive (~700 log-det evaluations)
 ```
+
+## Regularization Parameter
+
+**Recommended test range**: 1e-12, 1e-10, 1e-8, 1e-6, 1e-4
+
+- **Too small (< 1e-10)**: Numerical instability, log-det may be unreliable
+- **Just right (1e-10 to 1e-6)**: Stable computation, minimal bias
+- **Too large (> 1e-4)**: Over-regularization, biases selection toward high-energy dipoles
 
 ## Trade-offs
 

@@ -17,7 +17,6 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from selection_algorithms.common import (
-    load_base_matrices,
     load_forbidden_triads,
     check_triad_violation,
     compute_condition_number,
@@ -83,7 +82,7 @@ def select_dipoles_algorithm_G(
         print("WARNING: Computationally expensive (~700 log-det calls)")
         print()
     
-    # Compute F_eff = W @ F (inline)
+    # Compute F_eff = W @ F  
     F_eff = W @ F if W is not None else F
     
     selected_dipoles = []
@@ -161,7 +160,7 @@ def select_dipoles_algorithm_G(
         'logdet_history': logdet_history,
         'final_logdet': current_logdet,
         'condition_number': kappa_final,
-        'algorithm': 'G',
+        'algorithm': 'greedy_max_logdet',
         'parameters': {'regularization': regularization}
     }
 
@@ -182,14 +181,18 @@ WARNING: This algorithm is computationally expensive (~700 log-det evaluations).
 It may take several seconds to complete.
         """
     )
-    parser.add_argument('--base-matrices', type=str, default='src/model/base_matrices',
-                        help='Path to directory with F.npy, B.npy, W.npy')
+    parser.add_argument('--run-dir', type=str, required=True,
+                        help='Run directory (mesh-specific)')
+    parser.add_argument('--f-matrix-path', type=str, required=True,
+                        help='Path to F_matrix.npy')
+    parser.add_argument('--b-matrix-path', type=str, required=True,
+                        help='Path to B_matrix.npy')
+    parser.add_argument('--w-matrix-path', type=str, default=None,
+                        help='Path to W_matrix.npy (optional)')
     parser.add_argument('--forbidden-triads', type=str, default='src/model/forbidden_triads.npy',
                         help='Path to forbidden triads file')
     parser.add_argument('--regularization', type=float, default=1e-8,
                         help='Regularization for log-det (default: 1e-8)')
-    parser.add_argument('--output-dir', type=str, default='results/algorithm_G',
-                        help='Output directory for results')
     parser.add_argument('--no-save', action='store_true',
                         help='Do not save results to disk')
     parser.add_argument('--quiet', action='store_true',
@@ -197,16 +200,23 @@ It may take several seconds to complete.
     
     args = parser.parse_args()
     
+    # Build paths from run-dir
+    run_dir = Path(args.run_dir)
+    output_dir = run_dir / 'results' / 'greedy_max_logdet'
+    
     # Load matrices
-    matrices = load_base_matrices(Path(args.base_matrices))
+    F = np.load(Path(args.f_matrix_path))
+    B = np.load(Path(args.b_matrix_path))
+    W = np.load(Path(args.w_matrix_path)) if args.w_matrix_path else None
+    
     forbidden_triads = load_forbidden_triads(Path(args.forbidden_triads))
     all_dipoles = build_dipoles()
     
     # Run algorithm
     result = select_dipoles_algorithm_G(
-        F=matrices['F'],
-        B=matrices['B'],
-        W=matrices['W'],
+        F=F,
+        B=B,
+        W=W,
         forbidden_triads=forbidden_triads,
         all_dipoles=all_dipoles,
         regularization=args.regularization,
@@ -215,12 +225,11 @@ It may take several seconds to complete.
     
     # Save if requested
     if not args.no_save:
-        output_dir = Path(args.output_dir)
         # Include regularization in filename if non-default
         if abs(args.regularization - 1e-8) > 1e-12:
-            filename = f'S_algorithm_G_reg{args.regularization:.0e}'
+            filename = f'S_greedy_max_logdet_reg{args.regularization:.0e}'
         else:
-            filename = 'S_algorithm_G'
+            filename = 'S_greedy_max_logdet'
         save_selection_results(
             S=result['S'],
             metadata={k: v for k, v in result.items() if k != 'S'},

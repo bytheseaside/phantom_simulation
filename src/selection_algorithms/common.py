@@ -14,13 +14,57 @@ from model.utils import build_dipoles
 from model.base_matrices.generate_base_matrices import build_s_matrix
 
 
-def load_base_matrices(base_path: Path) -> Dict[str, np.ndarray]:
-    """Load F, B, W matrices from directory."""
-    return {
-        'F': np.load(base_path / 'F_matrix.npy'),
-        'B': np.load(base_path / 'B_matrix.npy'),
-        'W': np.load(base_path / 'W_matrix.npy')
-    }
+def validate_matrix_shapes(F: np.ndarray, B: np.ndarray, W: np.ndarray = None) -> Tuple[int, int, int]:
+    """
+    Validate matrix shapes for dipole selection algorithms.
+    
+    Checks that matrix dimensions are compatible for multiplication:
+    - F @ B requires F columns = B rows
+    - W @ F requires W square with size = F rows
+    
+    Parameters
+    ----------
+    F : np.ndarray
+        Dipole-to-scalp transfer matrix
+    B : np.ndarray
+        Antenna-to-dipole matrix
+    W : np.ndarray, optional
+        Probe weighting matrix
+        
+    Returns
+    -------
+    n_probes : int
+        Number of probes (F rows)
+    n_dipoles : int
+        Number of dipoles (F columns)
+    n_antennas : int
+        Number of antennas (B columns)
+        
+    Raises
+    ------
+    ValueError
+        If matrix dimensions are incompatible
+    """
+    f_rows, f_cols = F.shape  # probes × dipoles
+    b_rows, b_cols = B.shape  # dipoles × antennas
+    
+    # Check F @ B compatibility
+    if f_cols != b_rows:
+        raise ValueError(
+            f"Matrix multiplication F @ B requires F columns ({f_cols}) "
+            f"to match B rows ({b_rows})"
+        )
+    
+    # Check W @ F compatibility
+    if W is not None:
+        w_rows, w_cols = W.shape
+        if w_rows != f_rows or w_cols != f_rows:
+            raise ValueError(
+                f"W must be square ({f_rows}×{f_rows}) to match F rows, "
+                f"got ({w_rows}×{w_cols})"
+            )
+    
+    return f_rows, f_cols, b_cols
 
 
 def load_forbidden_triads(triads_path: Path) -> List[Set[Tuple[int, int]]]:
@@ -80,14 +124,7 @@ def compute_condition_number(
     if W is not None:
         M = W @ M
     
-    # Compute condition number via SVD
-    sigma = np.linalg.svd(M, compute_uv=False)
-    sigma_nz = sigma[sigma > 1e-10]
-    
-    if len(sigma_nz) == 0:
-        return np.inf
-    
-    return sigma_nz[0] / sigma_nz[-1]
+    return np.linalg.cond(M)
 
 
 def save_selection_results(

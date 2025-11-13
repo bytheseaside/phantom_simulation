@@ -16,7 +16,6 @@ import sys
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from selection_algorithms.common import (
-    load_base_matrices,
     load_forbidden_triads,
     check_triad_violation,
     compute_condition_number,
@@ -104,8 +103,8 @@ def select_dipoles_algorithm_B(
         'selected_indices': selected_indices,
         'n_selected': len(selected_dipoles),
         'norms': selected_norms,
-        'condition_number': cond,
-        'algorithm': 'B',
+        'condition_number': kappa,
+        'algorithm': 'greedy_energy_simple',
         'parameters': {}
     }
 
@@ -116,15 +115,17 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     
-    parser.add_argument('--base-matrices', type=str,
-                       default='src/model/base_matrices',
-                       help='Path to F, B, W matrices')
+    parser.add_argument('--run-dir', type=str, required=True,
+                       help='Run directory (mesh-specific)')
+    parser.add_argument('--f-matrix-path', type=str, required=True,
+                       help='Path to F_matrix.npy')
+    parser.add_argument('--b-matrix-path', type=str, required=True,
+                       help='Path to B_matrix.npy')
+    parser.add_argument('--w-matrix-path', type=str, default=None,
+                       help='Path to W_matrix.npy (optional)')
     parser.add_argument('--forbidden-triads', type=str,
                        default='src/model/forbidden_triads.npy',
                        help='Path to forbidden triads file')
-    parser.add_argument('--output-dir', type=str,
-                       default='results/algorithm_B',
-                       help='Output directory for results')
     parser.add_argument('--no-save', action='store_true',
                        help='Do not save results (console only)')
     parser.add_argument('--quiet', action='store_true',
@@ -132,9 +133,14 @@ def main():
     
     args = parser.parse_args()
     
-    # Load data
-    base_path = Path(args.base_matrices)
-    matrices = load_base_matrices(base_path)
+    # Build paths from run-dir
+    run_dir = Path(args.run_dir)
+    output_dir = run_dir / 'results' / 'greedy_energy_simple'
+    
+    # Load matrices
+    F = np.load(Path(args.f_matrix_path))
+    B = np.load(Path(args.b_matrix_path))
+    W = np.load(Path(args.w_matrix_path)) if args.w_matrix_path else None
     
     triads_path = Path(args.forbidden_triads)
     forbidden_triads = load_forbidden_triads(triads_path)
@@ -143,9 +149,9 @@ def main():
     
     # Run algorithm
     result = select_dipoles_algorithm_B(
-        F=matrices['F'],
-        B=matrices['B'],
-        W=matrices['W'],
+        F=F,
+        B=B,
+        W=W,
         forbidden_triads=forbidden_triads,
         all_dipoles=all_dipoles,
         verbose=not args.quiet
@@ -153,8 +159,7 @@ def main():
     
     # Save if requested
     if not args.no_save:
-        output_dir = Path(args.output_dir)
-        filename = 'S_algorithm_B'
+        filename = 'S_greedy_energy_simple'
         save_selection_results(
             S=result['S'],
             metadata={k: v for k, v in result.items() if k != 'S'},

@@ -17,7 +17,6 @@ import sys
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from selection_algorithms.common import (
-    load_base_matrices,
     load_forbidden_triads,
     check_triad_violation,
     compute_condition_number,
@@ -127,7 +126,7 @@ def select_dipoles_algorithm_H(
         'n_selected': len(selected_dipoles),
         'r_values': r_values,
         'condition_number': kappa,
-        'algorithm': 'H',
+        'algorithm': 'rrqr_importance_ranking',
         'parameters': {
             'n_dipoles_max': n_dipoles_max
         }
@@ -140,17 +139,19 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     
-    parser.add_argument('--base-matrices', type=str,
-                       default='src/model/base_matrices',
-                       help='Path to F, B, W matrices')
+    parser.add_argument('--run-dir', type=str, required=True,
+                       help='Run directory (mesh-specific)')
+    parser.add_argument('--f-matrix-path', type=str, required=True,
+                       help='Path to F_matrix.npy')
+    parser.add_argument('--b-matrix-path', type=str, required=True,
+                       help='Path to B_matrix.npy')
+    parser.add_argument('--w-matrix-path', type=str, default=None,
+                       help='Path to W_matrix.npy (optional)')
     parser.add_argument('--forbidden-triads', type=str,
                        default='src/model/forbidden_triads.npy',
                        help='Path to forbidden triads file')
     parser.add_argument('--n-dipoles-max', type=int, default=20,
                        help='Maximum number of dipoles to select')
-    parser.add_argument('--output-dir', type=str,
-                       default='results/algorithm_H',
-                       help='Output directory for results')
     parser.add_argument('--no-save', action='store_true',
                        help='Do not save results (console only)')
     parser.add_argument('--quiet', action='store_true',
@@ -158,9 +159,14 @@ def main():
     
     args = parser.parse_args()
     
-    # Load data
-    base_path = Path(args.base_matrices)
-    matrices = load_base_matrices(base_path)
+    # Build paths from run-dir
+    run_dir = Path(args.run_dir)
+    output_dir = run_dir / 'results' / 'rrqr_importance_ranking'
+    
+    # Load matrices
+    F = np.load(Path(args.f_matrix_path))
+    B = np.load(Path(args.b_matrix_path))
+    W = np.load(Path(args.w_matrix_path)) if args.w_matrix_path else None
     
     triads_path = Path(args.forbidden_triads)
     forbidden_triads = load_forbidden_triads(triads_path)
@@ -169,9 +175,9 @@ def main():
     
     # Run algorithm
     result = select_dipoles_algorithm_H(
-        F=matrices['F'],
-        B=matrices['B'],
-        W=matrices['W'],
+        F=F,
+        B=B,
+        W=W,
         forbidden_triads=forbidden_triads,
         all_dipoles=all_dipoles,
         n_dipoles_max=args.n_dipoles_max,
@@ -180,13 +186,12 @@ def main():
     
     # Save if requested and condition number is finite
     if not args.no_save:
-        output_dir = Path(args.output_dir)
         
         # Build filename with parameter
         if args.n_dipoles_max != 20:
-            filename = f'S_algorithm_H_nmax{args.n_dipoles_max}'
+            filename = f'S_rrqr_importance_ranking_nmax{args.n_dipoles_max}'
         else:
-            filename = 'S_algorithm_H'
+            filename = 'S_rrqr_importance_ranking'
         
         save_selection_results(
             S=result['S'],

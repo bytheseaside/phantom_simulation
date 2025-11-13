@@ -17,7 +17,6 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from selection_algorithms.common import (
-    load_base_matrices,
     load_forbidden_triads,
     check_triad_violation,
     compute_condition_number,
@@ -81,7 +80,7 @@ def select_dipoles_algorithm_E(
         print(f"κ_max = {kappa_max:.2e}")
         print()
     
-    # Compute F_eff = W @ F (inline)
+    # Compute F_eff = W @ F
     F_eff = W @ F if W is not None else F
     
     # Sort by norm
@@ -130,7 +129,7 @@ def select_dipoles_algorithm_E(
         'n_selected': len(selected_dipoles),
         'condition_numbers': condition_numbers,
         'condition_number': kappa_final,
-        'algorithm': 'E',
+        'algorithm': 'greedy_energy_condition_cap',
         'parameters': {'kappa_max': kappa_max}
     }
 
@@ -151,14 +150,18 @@ Examples:
   python -m src.selection_algorithms.algorithm_E_condition_cap.select --kappa-max 1e5
         """
     )
-    parser.add_argument('--base-matrices', type=str, default='src/model/base_matrices',
-                        help='Path to directory with F.npy, B.npy, W.npy')
+    parser.add_argument('--run-dir', type=str, required=True,
+                        help='Run directory (mesh-specific)')
+    parser.add_argument('--f-matrix-path', type=str, required=True,
+                        help='Path to F_matrix.npy')
+    parser.add_argument('--b-matrix-path', type=str, required=True,
+                        help='Path to B_matrix.npy')
+    parser.add_argument('--w-matrix-path', type=str, default=None,
+                        help='Path to W_matrix.npy (optional)')
     parser.add_argument('--forbidden-triads', type=str, default='src/model/forbidden_triads.npy',
                         help='Path to forbidden triads file')
     parser.add_argument('--kappa-max', type=float, default=1e4,
                         help='Maximum allowed condition number (default: 1e4)')
-    parser.add_argument('--output-dir', type=str, default='results/algorithm_E',
-                        help='Output directory for results')
     parser.add_argument('--no-save', action='store_true',
                         help='Do not save results to disk')
     parser.add_argument('--quiet', action='store_true',
@@ -166,16 +169,23 @@ Examples:
     
     args = parser.parse_args()
     
+    # Build paths from run-dir
+    run_dir = Path(args.run_dir)
+    output_dir = run_dir / 'results' / 'greedy_energy_condition_cap'
+    
     # Load matrices
-    matrices = load_base_matrices(Path(args.base_matrices))
+    F = np.load(Path(args.f_matrix_path))
+    B = np.load(Path(args.b_matrix_path))
+    W = np.load(Path(args.w_matrix_path)) if args.w_matrix_path else None
+    
     forbidden_triads = load_forbidden_triads(Path(args.forbidden_triads))
     all_dipoles = build_dipoles()
     
     # Run algorithm
     result = select_dipoles_algorithm_E(
-        F=matrices['F'],
-        B=matrices['B'],
-        W=matrices['W'],
+        F=F,
+        B=B,
+        W=W,
         forbidden_triads=forbidden_triads,
         all_dipoles=all_dipoles,
         kappa_max=args.kappa_max,
@@ -184,12 +194,11 @@ Examples:
     
     # Save if requested
     if not args.no_save:
-        output_dir = Path(args.output_dir)
         # Include kappa_max in filename if non-default
         if abs(args.kappa_max - 1e4) > 1e-6:
-            filename = f'S_algorithm_E_kappa{args.kappa_max:.0e}'
+            filename = f'S_greedy_energy_condition_cap_kappa{args.kappa_max:.0e}'
         else:
-            filename = 'S_algorithm_E'
+            filename = 'S_greedy_energy_condition_cap'
         save_selection_results(
             S=result['S'],
             metadata={k: v for k, v in result.items() if k != 'S'},

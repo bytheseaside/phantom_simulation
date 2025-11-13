@@ -17,7 +17,6 @@ import sys
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from selection_algorithms.common import (
-    load_base_matrices,
     load_forbidden_triads,
     check_triad_violation,
     compute_condition_number,
@@ -173,7 +172,7 @@ def select_dipoles_algorithm_I(
         'preselect_dipoles': preselect_dipoles,
         'leverage_scores': final_scores,
         'condition_number': kappa,
-        'algorithm': 'I',
+        'algorithm': 'rrqr_correlation_optimize',
         'parameters': {
             'n_preselect': n_preselect,
             'n_final': n_final,
@@ -183,36 +182,39 @@ def select_dipoles_algorithm_I(
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description='Algorithm I: Hybrid Greedy→SVD selection',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-    
-    parser.add_argument('--base-matrices', type=str,
-                       default='src/model/base_matrices',
-                       help='Path to F, B, W matrices')
-    parser.add_argument('--forbidden-triads', type=str,
+    parser = argparse.ArgumentParser(description='Algorithm I: Hybrid Greedy → SVD')
+    parser.add_argument('--run-dir', required=True,
+                       help='Run directory (mesh-specific)')
+    parser.add_argument('--f-matrix-path', required=True,
+                       help='Path to F_matrix.npy')
+    parser.add_argument('--b-matrix-path', required=True,
+                       help='Path to B_matrix.npy')
+    parser.add_argument('--w-matrix-path', default=None,
+                       help='Path to W_matrix.npy (optional)')
+    parser.add_argument('--forbidden-triads',
                        default='src/model/forbidden_triads.npy',
                        help='Path to forbidden triads file')
     parser.add_argument('--n-preselect', type=int, default=20,
-                       help='Number of dipoles to preselect with greedy')
+                       help='Number of dipoles to preselect with greedy (default: 20)')
     parser.add_argument('--n-final', type=int, default=16,
-                       help='Final number after SVD re-ranking')
+                       help='Final number of dipoles after SVD re-ranking (default: 16)')
     parser.add_argument('--r-keep', type=int, default=10,
-                       help='SVD components to keep for scoring')
-    parser.add_argument('--output-dir', type=str,
-                       default='results/algorithm_I',
-                       help='Output directory for results')
+                       help='Number of SVD components to keep for leverage scoring (default: 10)')
     parser.add_argument('--no-save', action='store_true',
-                       help='Do not save results (console only)')
+                       help='Do not save results to disk')
     parser.add_argument('--quiet', action='store_true',
-                       help='Suppress verbose output')
+                       help='Suppress progress output')
     
     args = parser.parse_args()
     
-    # Load data
-    base_path = Path(args.base_matrices)
-    matrices = load_base_matrices(base_path)
+    # Build paths from run-dir
+    run_dir = Path(args.run_dir)
+    output_dir = run_dir / 'results' / 'rrqr_correlation_optimize'
+    
+    # Load matrices
+    F = np.load(Path(args.f_matrix_path))
+    B = np.load(Path(args.b_matrix_path))
+    W = np.load(Path(args.w_matrix_path)) if args.w_matrix_path else None
     
     triads_path = Path(args.forbidden_triads)
     forbidden_triads = load_forbidden_triads(triads_path)
@@ -221,9 +223,9 @@ def main():
     
     # Run algorithm
     result = select_dipoles_algorithm_I(
-        F=matrices['F'],
-        B=matrices['B'],
-        W=matrices['W'],
+        F=F,
+        B=B,
+        W=W,
         forbidden_triads=forbidden_triads,
         all_dipoles=all_dipoles,
         n_preselect=args.n_preselect,
@@ -234,10 +236,9 @@ def main():
     
     # Save if requested and condition number is finite
     if not args.no_save:
-        output_dir = Path(args.output_dir)
         
         # Build filename with non-default parameters
-        filename = 'S_algorithm_I'
+        filename = 'S_rrqr_correlation_optimize'
         if args.n_preselect != 20:
             filename += f'_pre{args.n_preselect}'
         if args.n_final != 16:
