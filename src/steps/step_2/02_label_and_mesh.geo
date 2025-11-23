@@ -1,6 +1,13 @@
-// 02_label_and_mesh.geo
+// 02_label_and_mesh_CONSERVATIVE.geo — Conservative Mesh Parameters
 // Purpose: Load frozen geometry, define physical groups, set mesh parameters
 // and generate a .msh file with locally refined mesh for phantom head EEG.
+//
+// CONSERVATIVE CONFIGURATION:
+// - Balanced accuracy and computational cost
+// - Electrode refinement: 0.5 mm min
+// - Shell refinement: 0.6 mm min
+// - Global max: 2.0 mm
+// - Expected mesh size: 3-5 million elements
 
 SetFactory("OpenCASCADE");
 General.Terminal = 1;
@@ -23,9 +30,9 @@ Mesh.ElementOrder = 2;             // Use 2nd-order tetrahedra (quadratic elemen
 Mesh.HighOrderOptimize = 2;        // Advanced optimization of high-order nodes
 Mesh.SecondOrderLinear = 1;        // Straight internal edges (safer for PDE)
 
-Mesh.CharacteristicLengthMin = 0.00075; // 0.75 mm — minimum mesh size near fine features
-Mesh.CharacteristicLengthMax = 0.0045;  // 4.5 mm — maximum mesh size in interior gel
-Mesh.MeshSizeFromCurvature  = 25;       // Curvature-driven refinement sensitivity (moderate-high)
+Mesh.CharacteristicLengthMin = 0.0005;  // 0.5 mm — minimum mesh size (conservative)
+Mesh.CharacteristicLengthMax = 0.002;   // 2.0 mm — maximum mesh size in interior gel
+Mesh.MeshSizeFromCurvature  = 25;       // Curvature-driven refinement sensitivity
 
 Mesh.Optimize = 1;
 Mesh.OptimizeNetgen = 1;
@@ -42,12 +49,12 @@ Field[1].NumPointsPerCurve = 200;
 
 Field[2] = Threshold;
 Field[2].InField = 1;
-Field[2].SizeMin = 0.00075;  // 0.75 mm — highest resolution near electrode–gel contact
-Field[2].SizeMax = 0.0045;   // 4.5 mm — revert to default size in deep gel
-Field[2].DistMin = 0.002;    // ≤ 2 mm → apply SizeMin
-Field[2].DistMax = 0.010;    // 2–10 mm → transition to SizeMax
+Field[2].SizeMin = 0.0005;   // 0.5 mm — near electrode–gel contact
+Field[2].SizeMax = 0.002;    // 2.0 mm — far from electrodes
+Field[2].DistMin = 0.0015;   // ≤ 1.5 mm → apply SizeMin
+Field[2].DistMax = 0.006;    // 1.5–6 mm → transition to SizeMax
 
-// 4) Refinement near inner shell–gel interface
+// 4) Refinement near shell–gel interface
 // Extract boundary surfaces of head volume automatically
 shell_surfaces[] = Surface In BoundingSurfaces{ Volume{ head_volume_ids[] }; };
 
@@ -57,10 +64,10 @@ Field[3].NumPointsPerCurve = 200;
 
 Field[4] = Threshold;
 Field[4].InField = 3;
-Field[4].SizeMin = 0.00075;    // < 1 mm — to ensure ≥4 elements through 3.2 mm shell
-Field[4].SizeMax = 0.0045;   // revert to default
-Field[4].DistMin = 0.002;   // ≤ 2 mm → SizeMin
-Field[4].DistMax = 0.004;    // transition zone
+Field[4].SizeMin = 0.0006;   // 0.6 mm — near shell boundaries (≈5 P2 elements across 3.2mm)
+Field[4].SizeMax = 0.002;    // 2.0 mm — far from shell
+Field[4].DistMin = 0.0015;   // ≤ 1.5 mm → SizeMin
+Field[4].DistMax = 0.004;    // 1.5–4 mm → transition zone
 
 // Combine both refinements
 Field[5] = Min;
@@ -68,7 +75,7 @@ Field[5].FieldsList = {2, 4};
 
 Background Field = 5; // Use the minimum size from electrode and shell fields
 
-// 4) Physical groups used in solver
+// 5) Physical groups used in solver
 Physical Volume("head", 1) = { head_volume_ids[] };
 Physical Volume("gel", 2)  = { gel_volume_ids[]  };
 
@@ -85,7 +92,7 @@ Physical Surface("v_9", 19) = { e9_surfaces[] };
 // Head outer surface
 // Physical Surface("outer_head") = { head_outer_surface[] };
 
-// 5) Mesh + save
+// 6) Mesh + save
 Mesh 3;
 Mesh.MshFileVersion = 4.1;
 Save "mesh.msh";
