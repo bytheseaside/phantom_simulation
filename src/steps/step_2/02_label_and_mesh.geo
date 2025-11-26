@@ -1,13 +1,6 @@
-// 02_label_and_mesh_REFINED.geo — Refined Mesh Parameters
+// 02_label_and_mesh.geo — Mesh Parameters
 // Purpose: Load frozen geometry, define physical groups, set mesh parameters
 // and generate a .msh file with locally refined mesh for phantom head EEG.
-//
-// REFINED CONFIGURATION:
-// - Maximum accuracy for convergence testing
-// - Electrode refinement: 0.3 mm min
-// - Shell refinement: 0.4 mm min
-// - Global max: 2.0 mm
-// - Expected mesh size: 8-12 million elements
 
 SetFactory("OpenCASCADE");
 General.Terminal = 1;
