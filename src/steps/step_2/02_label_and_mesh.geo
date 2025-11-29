@@ -87,8 +87,8 @@ Physical Surface("v_9", 19) = { e9_surfaces[] };
 // Head outer surface
 // Physical Surface("outer_head") = { head_outer_surface[] };
 
-// 6) Mesh + save
-Mesh 3;
-Mesh.MshFileVersion = 4.1;
-Save "mesh.msh";
+// // 6) Mesh + save
+// Mesh 3;
+// Mesh.MshFileVersion = 4.1;
+// Save "mesh.msh";
 Printf(">> Mesh written: mesh.msh");
