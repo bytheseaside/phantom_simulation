@@ -11,7 +11,7 @@ Merge "prep.geo_unrolled.xao";
 // 1) Bring in IDs for head, gel, and electrode contact surfaces
 Include "ids.inc.geo";
 If (#volumes_to_delete[] > 0)
-  Printf(">> Deleting %g unwanted volume(s): %g", #volumes_to_delete[], volumes_to_delete[]);
+  Printf(">> Deleting %g unwanted volume(s).", #volumes_to_delete[]);
   Delete { Volume{ volumes_to_delete[] }; }
 EndIf
 
