@@ -20,7 +20,9 @@ Printf(">> Geometry loaded: Volumes=%g, Surfaces=%g", #vs[], #ss[]);
 
 // 2) Global mesh parameters
 Mesh.ElementOrder = 2;             // Use 2nd-order tetrahedra (quadratic elements)
-Mesh.HighOrderOptimize = 2;        // Advanced optimization of high-order nodes
+// Mesh.HighOrderOptimize = 2;        // Advanced optimization of high-order nodes -> RAM killer
+Mesh.HighOrderOptimize = 1;        // Basic optimization
+
 Mesh.SecondOrderLinear = 1;        // Straight internal edges (safer for PDE)
 
 Mesh.CharacteristicLengthMin = 0.0005;  // 0.5 mm — minimum mesh size
