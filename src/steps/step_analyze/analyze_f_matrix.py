@@ -34,16 +34,24 @@ def compute_correlation_matrix(f_matrix):
     return np.corrcoef(f_matrix, rowvar=False)
 
 
-def compute_probe_statistics(f_matrix, probe_names=None):
+def compute_probe_statistics(f_matrix, probe_names=None, case_names=None):
     """Compute row-wise statistics (mean, std, CV) for each probe across all cases.
+    
+    Parameters:
+        f_matrix: (n_probes, n_cases) array
+        probe_names: list of probe names
+        case_names: list of case names
     
     Returns:
         dict with probe statistics and summary metrics
     """
-    n_probes = f_matrix.shape[0]
+    n_probes, n_cases = f_matrix.shape
     
     if probe_names is None:
         probe_names = [f"probe_{i}" for i in range(n_probes)]
+    
+    if case_names is None:
+        case_names = [f"case_{i}" for i in range(n_cases)]
     
     probe_stats = []
     for i in range(n_probes):
@@ -53,11 +61,15 @@ def compute_probe_statistics(f_matrix, probe_names=None):
         # Coefficient of variation: std / |mean| (handle near-zero means)
         cv = std_val / abs(mean_val) if abs(mean_val) > 1e-12 else np.inf
         
+        # Per-case values as a dict: {case_name: value}
+        values_per_case = {case_names[j]: float(row[j]) for j in range(n_cases)}
+        
         probe_stats.append({
             'probe_name': probe_names[i],
             'mean': mean_val,
             'std': std_val,
-            'cv': float(cv) if not np.isinf(cv) else None
+            'cv': float(cv) if not np.isinf(cv) else None,
+            'values_per_case': values_per_case
         })
     
     # Summary metrics across all probes
@@ -200,7 +212,7 @@ def main():
     
     # 3. Compute probe statistics (row-wise analysis)
     print("\nComputing probe statistics...")
-    probe_stats = compute_probe_statistics(f_matrix, probe_names)
+    probe_stats = compute_probe_statistics(f_matrix, probe_names, case_names)
     print(f"  Mean of probe stds: {probe_stats['summary']['mean_of_stds']:.3e}")
     if probe_stats['summary']['mean_of_cvs'] is not None:
         print(f"  Mean of probe CVs: {probe_stats['summary']['mean_of_cvs']:.3f}")
