@@ -16,6 +16,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+import fnmatch
 import numpy as np
 import csv
 import matplotlib
@@ -186,6 +187,8 @@ def main():
                     help='Probe CSV file (name,x,y,z)')
     ap.add_argument('--out', type=Path, default=Path('f_matrix_output'),
                     help='Output directory')
+    ap.add_argument('--pattern', type=str, default=None,
+                    help='Glob pattern to include case names (e.g., "dipole_*")')
     args = ap.parse_args()
 
     if not args.vtu_dir.exists():
@@ -204,6 +207,12 @@ def main():
     if len(cases) == 0:
         print("ERROR: No VTU files found", file=sys.stderr)
         sys.exit(1)
+
+    # Optional filtering using a glob pattern (simple shell-style wildcard)
+    if args.pattern:
+        filtered = [c for c in cases if fnmatch.fnmatch(c[0], args.pattern)]
+        print(f"Filtered with pattern '{args.pattern}': {len(filtered)} cases remain")
+        cases = filtered
 
     # Read probes
     print(f"Reading probes from {args.probes}...")

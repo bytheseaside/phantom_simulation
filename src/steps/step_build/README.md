@@ -22,9 +22,10 @@ python build_f_matrix.py --vtu-dir <path-to-vtu-directory> --probes <path-to-pro
 
 - `--vtu-dir <path>`: Directory containing VTU files.
 - `--probes <path>`: Path to the probe CSV file (format: `name,x,y,z`).
-- `--out <directory>`: Directory to save outputs (default: `f_matrix_output`).
+- `--out <path>`: Output directory for the F-matrix and related files.
+- `--pattern <glob>`: Glob pattern to include only cases whose derived case name matches (e.g., `"dipole_*"`).
 
-## Outputs
+Examples for your workflow:
 
 - `F_matrix.npy`: Raw F-matrix.
 - `F_matrix_heatmap.png`: Heatmap visualization of the F-matrix.
