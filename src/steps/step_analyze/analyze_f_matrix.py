@@ -9,7 +9,7 @@ Features:
 - Generate heatmaps for visualizing correlations.
 
 Usage:
-  python analyze_f_matrix.py --matrix f_matrix_complete/F_matrix.npy --n 8 --out analysis_results
+  python analyze_f_matrix.py --matrix f_matrix_complete/F_matrix.npy --out analysis_results
 
 Options:
   --matrix <path>       Path to the F-matrix file in .npy format.
@@ -24,47 +24,20 @@ import argparse
 import json
 from pathlib import Path
 import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')
-from matplotlib import colors as mcolors
-from itertools import combinations
-import re
+import matplotlib.pyplot as plt
 
 def compute_correlation_matrix(f_matrix):
-    """
-    Compute pairwise correlation between columns (dipoles).
-    Returns correlation matrix where C[i,j] = correlation between dipole i and j.
-    """
-    corr_matrix = np.corrcoef(f_matrix, rowvar=False)
-    return corr_matrix
-
-
-def compute_column_norms(f_matrix):
-    """Compute L2 norm of each column (signal strength)."""
-    return np.linalg.norm(f_matrix, axis=0)
-
+    """Compute pairwise correlation between columns (cases)."""
+    return np.corrcoef(f_matrix, rowvar=False)
 
 
 def analyze_matrix_properties(f_matrix):
-    """Compute rank, condition number, singular values.
-
-    Uses NumPy helpers for rank and condition-number computation so the
-    decisions follow NumPy's robust defaults (tolerances tied to machine
-    precision and matrix shape). Still compute and return the singular
-    values for diagnostics.
-    """
-    # Compute singular values (kept for reporting)
+    """Compute rank, condition number, and singular values."""
     _, s, _ = np.linalg.svd(f_matrix, full_matrices=False)
-
-    # Rank computed via NumPy helper (uses a robust SVD-based tolerance)
     rank = int(np.linalg.matrix_rank(f_matrix))
-
-    # Condition number
-    try:
-        cond = float(np.linalg.cond(f_matrix))
-    except Exception:
-        cond = np.inf
+    cond = float(np.linalg.cond(f_matrix))
 
     return {
         'rank': rank,
@@ -76,15 +49,7 @@ def analyze_matrix_properties(f_matrix):
 
 
 def save_correlation_heatmap(corr_matrix, case_names, output_path: Path, *, abs_val: bool = True, annotate: bool = True, fmt: str = "{:.2f}"):
-    """Save correlation matrix as heatmap.
-
-    Additional features:
-    - abs_val: plot absolute value of correlations (0..1) instead of signed (-1..1)
-    - annotate: put numeric values in each visible cell
-    - fmt: format string for the numeric annotations
-    """
-
-    # Parameters are accepted via function arguments (see signature above).
+    """Save correlation matrix as heatmap with optional absolute values and annotations."""
     # Prepare plotting matrix
     mat = np.array(corr_matrix, copy=True)
     if abs_val:
@@ -95,41 +60,34 @@ def save_correlation_heatmap(corr_matrix, case_names, output_path: Path, *, abs_
         vmin, vmax = -1.0, 1.0
         cmap = plt.get_cmap('RdBu_r')
 
-    nmat = mat.shape[0]
-    tri_i, tri_j = np.tril_indices(nmat, -1)
+    n_cases = mat.shape[0]
+    tri_i, tri_j = np.tril_indices(n_cases, -1)
     mat[tri_i, tri_j] = 0.0
 
     _, ax = plt.subplots(figsize=(14, 12))
 
     im = ax.imshow(mat, cmap=cmap, vmin=vmin, vmax=vmax, aspect='auto')
 
-    ax.set_xlabel('Dipole Case', fontsize=10)
-    ax.set_ylabel('Dipole Case', fontsize=10)
-    ax.set_title('Dipole Correlation Matrix', fontsize=14)
+    ax.set_xlabel('Case', fontsize=10)
+    ax.set_ylabel('Case', fontsize=10)
+    ax.set_title('Case Correlation Matrix', fontsize=14)
 
-    n = len(case_names)
-    # Set ticks
-    ax.set_xticks(range(n))
-    ax.set_xticklabels(case_names, rotation=45, fontsize=6)
+    # Set ticks - use min of matrix size and case_names length
+    n_labels = min(n_cases, len(case_names))
+    ax.set_xticks(range(n_labels))
+    ax.set_xticklabels(case_names[:n_labels], rotation=45, fontsize=6)
     ax.xaxis.set_ticks_position('top')
-    ax.set_yticks(range(n))
-    ax.set_yticklabels(case_names, rotation=45, fontsize=6)
+    ax.set_yticks(range(n_labels))
+    ax.set_yticklabels(case_names[:n_labels], rotation=45, fontsize=6)
     ax.yaxis.set_ticks_position('right')
 
-    # Annotate numeric values on the visible cells
+    # Annotate numeric values on upper triangle
     if annotate:
-        for i in range(n):
-            for j in range(n):
-                # Skip lower triangle if masked
-                if j < i:
-                    continue
-                try:
-                    val = mat[i, j]
-                except Exception:
-                    val = corr_matrix[i, j]
-                if np.ma.is_masked(val) or (isinstance(val, float) and np.isnan(val)):
-                    continue
-                ax.text(j, i, fmt.format(float(val)), ha='center', va='center', fontsize=6, color='black')
+        for i in range(n_cases):
+            for j in range(i, n_cases):  # Upper triangle only
+                val = mat[i, j]
+                if not np.isnan(val):
+                    ax.text(j, i, fmt.format(float(val)), ha='center', va='center', fontsize=6, color='black')
 
     cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
     cbar.set_label('Correlation' + (' (abs)' if abs_val else ''), fontsize=10)
@@ -137,11 +95,6 @@ def save_correlation_heatmap(corr_matrix, case_names, output_path: Path, *, abs_
     plt.tight_layout()
     plt.savefig(output_path, dpi=150)
     plt.close()
-
-def extract_electrodes(dipole_name):
-    """Extract electrode numbers from dipole name (e.g., 'e1e2' -> [1, 2])."""
-    matches = re.findall(r'e(\d+)', dipole_name)
-    return [int(m) for m in matches]
 
 
 def main():
@@ -167,7 +120,7 @@ def main():
     # Load matrix
     print(f"Loading F-matrix from {args.matrix}...")
     f_matrix = np.load(args.matrix)
-    print(f"Matrix shape: {f_matrix.shape[0]} probes × {f_matrix.shape[1]} dipoles")
+    print(f"Matrix shape: {f_matrix.shape[0]} probes × {f_matrix.shape[1]} cases")
 
     # Create output directory
     args.out.mkdir(parents=True, exist_ok=True)
@@ -182,8 +135,17 @@ def main():
     print("\nComputing correlation matrix...")
     corr_matrix = compute_correlation_matrix(f_matrix)
 
+    # Load case names from metadata.json (created by build_f_matrix.py)
+    metadata_path = args.matrix.parent / "metadata.json"
+    if metadata_path.exists():
+        with metadata_path.open('r') as f:
+            metadata = json.load(f)
+            case_names = metadata.get('cases', [f"case_{i}" for i in range(f_matrix.shape[1])])
+    else:
+        print(f"  WARNING: metadata.json not found at {metadata_path}, using generic case names")
+        case_names = [f"case_{i}" for i in range(f_matrix.shape[1])]
+    
     # Save correlation heatmap
-    case_names = [f"e{i}e{j}" for i in range(1, 9) for j in range(i + 1, 10)] # ORDERED LIST OF DIPOLES
     corr_heatmap_path = args.out / "correlation_heatmap.png"
     save_correlation_heatmap(corr_matrix, case_names, corr_heatmap_path, abs_val=args.abs_corr, annotate=args.annotate, fmt=args.fmt)
     print(f"  Saved: {corr_heatmap_path}")

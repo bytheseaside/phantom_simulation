@@ -1,5 +1,6 @@
 run*/cases
 run*/run_steps
+run*/*_F
 *.step
 *.msh
 
