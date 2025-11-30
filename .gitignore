@@ -6,6 +6,7 @@ run*/*_F
 
 # Algorithm results
 results/
+screenshots/
 
 # Python cache
 __pycache__

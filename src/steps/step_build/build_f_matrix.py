@@ -156,13 +156,13 @@ def save_outputs(f_matrix, probe_names, case_names, output_dir: Path):
             ax.text(j, i, fmt.format(f_disp[i, j]),
                     ha="center", va="center", color="black", fontsize=4)
 
-    ax.set_xlabel('Dipole Case', fontsize=12)
+    ax.set_xlabel('Case', fontsize=12)
     ax.set_ylabel('Probe', fontsize=12)
     ax.set_title(f'F-Matrix Heatmap ({unit})', fontsize=14)
 
     ax.set_xticks(range(len(case_names)))
     ax.set_xticklabels(case_names, rotation=45, fontsize=8)
-    ax.xaxis.set_ticks_position('top')
+    ax.xaxis.set_ticks_position('bottom')
     n_probes = len(probe_names)
     tick_stride = max(1, n_probes // 20)
     y_ticks = list(range(0, n_probes, tick_stride))
