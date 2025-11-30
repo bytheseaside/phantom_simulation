@@ -21,6 +21,7 @@ Options:
   --fmt <format>        Format string for numeric annotations (default: "{:.2f}").
 """
 import argparse
+import csv
 import json
 from pathlib import Path
 import numpy as np
@@ -31,6 +32,50 @@ import matplotlib.pyplot as plt
 def compute_correlation_matrix(f_matrix):
     """Compute pairwise correlation between columns (cases)."""
     return np.corrcoef(f_matrix, rowvar=False)
+
+
+def compute_probe_statistics(f_matrix, probe_names=None):
+    """Compute row-wise statistics (mean, std, CV) for each probe across all cases.
+    
+    Returns:
+        dict with probe statistics and summary metrics
+    """
+    n_probes = f_matrix.shape[0]
+    
+    if probe_names is None:
+        probe_names = [f"probe_{i}" for i in range(n_probes)]
+    
+    probe_stats = []
+    for i in range(n_probes):
+        row = f_matrix[i, :]
+        mean_val = float(np.mean(row))
+        std_val = float(np.std(row))
+        # Coefficient of variation: std / |mean| (handle near-zero means)
+        cv = std_val / abs(mean_val) if abs(mean_val) > 1e-12 else np.inf
+        
+        probe_stats.append({
+            'probe_name': probe_names[i],
+            'mean': mean_val,
+            'std': std_val,
+            'cv': float(cv) if not np.isinf(cv) else None
+        })
+    
+    # Summary metrics across all probes
+    stds = [p['std'] for p in probe_stats]
+    cvs = [p['cv'] for p in probe_stats if p['cv'] is not None]
+    
+    summary = {
+        'mean_of_stds': float(np.mean(stds)),
+        'std_of_stds': float(np.std(stds)),
+        'mean_of_cvs': float(np.mean(cvs)) if cvs else None,
+        'max_std': float(np.max(stds)),
+        'min_std': float(np.min(stds)),
+    }
+    
+    return {
+        'per_probe': probe_stats,
+        'summary': summary
+    }
 
 
 def analyze_matrix_properties(f_matrix):
@@ -135,12 +180,15 @@ def main():
     print("\nComputing correlation matrix...")
     corr_matrix = compute_correlation_matrix(f_matrix)
 
-    # Load case names from metadata.json (created by build_f_matrix.py)
+    # Load case names and probe names from metadata.json (created by build_f_matrix.py)
     metadata_path = args.matrix.parent / "metadata.json"
+    probe_names = None
     if metadata_path.exists():
         with metadata_path.open('r') as f:
             metadata = json.load(f)
             case_names = metadata.get('cases', [f"case_{i}" for i in range(f_matrix.shape[1])])
+            # Try to get probe names from metadata (may not exist in older versions)
+            probe_names = metadata.get('probe_names', None)
     else:
         print(f"  WARNING: metadata.json not found at {metadata_path}, using generic case names")
         case_names = [f"case_{i}" for i in range(f_matrix.shape[1])]
@@ -149,10 +197,18 @@ def main():
     corr_heatmap_path = args.out / "correlation_heatmap.png"
     save_correlation_heatmap(corr_matrix, case_names, corr_heatmap_path, abs_val=args.abs_corr, annotate=args.annotate, fmt=args.fmt)
     print(f"  Saved: {corr_heatmap_path}")
-            
-    # 3. Save results
+    
+    # 3. Compute probe statistics (row-wise analysis)
+    print("\nComputing probe statistics...")
+    probe_stats = compute_probe_statistics(f_matrix, probe_names)
+    print(f"  Mean of probe stds: {probe_stats['summary']['mean_of_stds']:.3e}")
+    if probe_stats['summary']['mean_of_cvs'] is not None:
+        print(f"  Mean of probe CVs: {probe_stats['summary']['mean_of_cvs']:.3f}")
+                
+    # 4. Save results
     results = {
         'matrix_properties': props,
+        'probe_statistics': probe_stats,
     }
     
     results_path = args.out / "analysis_results.json"

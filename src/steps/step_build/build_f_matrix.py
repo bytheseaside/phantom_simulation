@@ -114,6 +114,7 @@ def save_outputs(f_matrix, probe_names, case_names, output_dir: Path):
     metadata = {
         "n_probes": len(probe_names),
         "n_cases": len(case_names),
+        "probe_names": probe_names,
         "cases": case_names,
         "matrix_shape": list(f_matrix.shape),
         "max_abs_value": float(max_val),
