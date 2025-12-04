@@ -3,10 +3,11 @@ run*/run_steps
 run*/*_F
 *.step
 *.msh
+screenshots/
+*.code-workspace
 
 # Algorithm results
 results/
-screenshots/
 
 # Python cache
 __pycache__
