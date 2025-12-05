@@ -128,7 +128,12 @@ def save_outputs(f_matrix, probe_names, case_names, output_dir: Path):
     print(f"Saved metadata: {meta_path}")
 
     # 3. Create heatmap visualization with numbers (auto unit selection)
-    _, ax = plt.subplots(figsize=(18, 12))
+    n_probes, n_cases = f_matrix.shape
+    
+    # Scale figure size generously to keep fixed font sizes readable
+    fig_width = max(24, n_cases * 1.2)
+    fig_height = max(18, n_probes * 1.2)
+    _, ax = plt.subplots(figsize=(fig_width, fig_height), dpi=300)
 
     # Auto-select display unit using 95th percentile
     p95 = np.percentile(np.abs(f_matrix), 95)
@@ -146,36 +151,50 @@ def save_outputs(f_matrix, probe_names, case_names, output_dir: Path):
         fmt = '{:.0f}'
 
     f_disp = f_matrix * scale
-    max_disp = np.max(np.abs(f_disp))
+    # Use symmetric limits centered at zero for diverging colormap
+    max_abs = np.max(np.abs(f_disp))
+    vmin, vmax = -max_abs, max_abs
 
-    im = ax.imshow(f_disp, aspect='auto', cmap='RdBu_r', vmin=-max_disp, vmax=max_disp)
+    im = ax.imshow(f_disp, aspect='auto', cmap='PRGn', vmin=vmin, vmax=vmax)
 
-    n_probes, n_cases = f_disp.shape    
+    import matplotlib.patheffects as path_effects
+    cell_fontsize = 18
     for i in range(n_probes):
         for j in range(n_cases):
-            ax.text(j, i, fmt.format(f_disp[i, j]),
-                    ha="center", va="center", color="black", fontsize=4)
+            text = ax.text(j, i, fmt.format(f_disp[i, j]),
+                    ha="center", va="center", color="black", 
+                    fontsize=cell_fontsize, fontweight='bold')
+            text.set_path_effects([
+                path_effects.Stroke(linewidth=2, foreground='white'),
+                path_effects.Normal()
+            ])
 
-    ax.set_xlabel('Case', fontsize=12)
-    ax.set_ylabel('Probe', fontsize=12)
-    ax.set_title(f'F-Matrix Heatmap ({unit})', fontsize=14)
-
+    tick_fontsize = 22
+    ax.set_xlabel('Stimulation Case', fontsize=28, fontweight='bold', labelpad=20)
     ax.set_xticks(range(len(case_names)))
-    ax.set_xticklabels(case_names, rotation=45, fontsize=8)
+    ax.set_xticklabels(case_names, rotation=45, ha='right', fontsize=tick_fontsize)
     ax.xaxis.set_ticks_position('bottom')
-    n_probes = len(probe_names)
-    tick_stride = max(1, n_probes // 20)
-    y_ticks = list(range(0, n_probes, tick_stride))
-    y_labels = [probe_names[i] for i in y_ticks]
-    ax.set_yticks(y_ticks)
-    ax.set_yticklabels(y_labels, fontsize=6)
+    
+    ax.set_ylabel('Probe', fontsize=28, fontweight='bold')
+    ax.set_yticks(range(n_probes))
+    ax.set_yticklabels(probe_names, fontsize=tick_fontsize)
 
-    cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-    cbar.set_label(f'Voltage ({unit})', fontsize=10)
+    protocol = "Monopolar" if n_cases <= 10 else "Dipolar"
+    ax.set_title(f'{protocol} Stimulation: Probe Voltage Responses ({unit})', 
+                 fontsize=32, fontweight='bold', pad=30)
+
+    cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.02)
+    cbar.set_label(f'Voltage ({unit})', fontsize=24, fontweight='bold')
+    
+    # Simple symmetric ticks from -max_abs to +max_abs
+    ticks = np.linspace(-max_abs, max_abs, 9)
+    cbar.set_ticks(ticks)
+    cbar.set_ticklabels([fmt.format(t) for t in ticks])
+    cbar.ax.tick_params(labelsize=18)
 
     plt.tight_layout()
     heatmap_path = output_dir / "F_matrix_heatmap.png"
-    plt.savefig(heatmap_path, dpi=150)
+    plt.savefig(heatmap_path, dpi=300)
     plt.close()
     print(f"Saved heatmap: {heatmap_path}")
 

@@ -112,45 +112,59 @@ def save_correlation_heatmap(corr_matrix, case_names, output_path: Path, *, abs_
     if abs_val:
         mat = np.abs(mat)
         vmin, vmax = 0.0, 1.0
-        cmap = plt.get_cmap('Blues')
+        cmap = plt.get_cmap('Greens')
     else:
         vmin, vmax = -1.0, 1.0
-        cmap = plt.get_cmap('RdBu_r')
+        cmap = plt.get_cmap('PRGn')
 
     n_cases = mat.shape[0]
-    tri_i, tri_j = np.tril_indices(n_cases, -1)
+    tri_i, tri_j = np.triu_indices(n_cases, 1)
     mat[tri_i, tri_j] = 0.0
 
-    _, ax = plt.subplots(figsize=(14, 12))
+    fig_size = max(24, n_cases * 1.5)
+    _, ax = plt.subplots(figsize=(fig_size, fig_size), dpi=300)
 
     im = ax.imshow(mat, cmap=cmap, vmin=vmin, vmax=vmax, aspect='auto')
 
-    ax.set_xlabel('Case', fontsize=10)
-    ax.set_ylabel('Case', fontsize=10)
-    ax.set_title('Case Correlation Matrix', fontsize=14)
+    ax.set_xlabel('Case', fontsize=28, fontweight='bold', labelpad=20)
+    ax.set_ylabel('Case', fontsize=28, fontweight='bold', labelpad=20)
+    ax.set_title('Case Correlation Matrix', fontsize=32, fontweight='bold', pad=30)
 
-    # Set ticks - use min of matrix size and case_names length
     n_labels = min(n_cases, len(case_names))
+    
+    tick_fontsize = 22
+    
     ax.set_xticks(range(n_labels))
-    ax.set_xticklabels(case_names[:n_labels], rotation=45, fontsize=6)
-    ax.xaxis.set_ticks_position('top')
+    ax.set_xticklabels(case_names[:n_labels], rotation=45, ha='right',
+                       fontsize=tick_fontsize)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.xaxis.set_label_position('bottom')
+    
     ax.set_yticks(range(n_labels))
-    ax.set_yticklabels(case_names[:n_labels], rotation=45, fontsize=6)
-    ax.yaxis.set_ticks_position('right')
+    ax.set_yticklabels(case_names[:n_labels], rotation=45, ha='right', fontsize=tick_fontsize)
+    ax.yaxis.set_ticks_position('left')
+    ax.yaxis.set_label_position('left')
 
-    # Annotate numeric values on upper triangle
+    cell_fontsize = 18
     if annotate:
+        import matplotlib.patheffects as path_effects
         for i in range(n_cases):
-            for j in range(i, n_cases):  # Upper triangle only
+            for j in range(i + 1):  # Lower triangle only
                 val = mat[i, j]
                 if not np.isnan(val):
-                    ax.text(j, i, fmt.format(float(val)), ha='center', va='center', fontsize=6, color='black')
+                    text = ax.text(j, i, fmt.format(float(val)), ha='center', va='center', 
+                                  fontsize=cell_fontsize, fontweight='bold', color='black')
+                    text.set_path_effects([
+                        path_effects.Stroke(linewidth=2, foreground='white'),
+                        path_effects.Normal()
+                    ])
 
     cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-    cbar.set_label('Correlation' + (' (abs)' if abs_val else ''), fontsize=10)
+    cbar.set_label('Correlation' + (' (abs)' if abs_val else ''), fontsize=24, fontweight='bold')
+    cbar.ax.tick_params(labelsize=18)
 
     plt.tight_layout()
-    plt.savefig(output_path, dpi=150)
+    plt.savefig(output_path, dpi=300)
     plt.close()
 
 
