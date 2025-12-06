@@ -193,7 +193,7 @@ def save_outputs(f_matrix, probe_names, case_names, output_dir: Path):
     cbar.ax.tick_params(labelsize=18)
 
     plt.tight_layout()
-    heatmap_path = output_dir / "F_matrix_heatmap.png"
+    heatmap_path = output_dir / "F_matrix_heatmap.svg"
     plt.savefig(heatmap_path, dpi=300)
     plt.close()
     print(f"Saved heatmap: {heatmap_path}")

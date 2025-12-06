@@ -220,7 +220,7 @@ def main():
         case_names = [f"case_{i}" for i in range(f_matrix.shape[1])]
     
     # Save correlation heatmap
-    corr_heatmap_path = args.out / "correlation_heatmap.png"
+    corr_heatmap_path = args.out / "correlation_heatmap.svg"
     save_correlation_heatmap(corr_matrix, case_names, corr_heatmap_path, abs_val=args.abs_corr, annotate=args.annotate, fmt=args.fmt)
     print(f"  Saved: {corr_heatmap_path}")
     

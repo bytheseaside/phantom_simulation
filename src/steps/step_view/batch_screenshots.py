@@ -27,6 +27,7 @@ Options:
   --gel MODE        Gel display: off, surface, volume (default: off)
   --no-elec         Hide electrodes
   --clim VALUE      Fixed symmetric color limit in μV (e.g., 150000 for ±150k μV)
+  --colorbar        Show color bar with voltage scale (hidden by default)
 """
 
 import argparse
@@ -58,7 +59,19 @@ def set_camera_view(plotter, direction='front'):
         plotter.view_vector((0, -1, 0))
 
 
-def process_case(vtu_path, view_direction, output_dir, head_mode='surface', gel_mode='off', show_elec=True, scale_factor=1e3, clim=None):
+def process_case(
+        vtu_path,
+        view_direction,
+        output_dir,
+        head_mode='surface',
+        gel_mode='off',
+        show_elec=True,
+        scale_factor=1e3,
+        clim=None,
+        use_png=False,
+        dpi=600,
+        show_colorbar=False
+    ):
     """Process a single VTU file: load, configure view, save screenshot."""
     try:
         print(f"[processing] {vtu_path.name}")
@@ -97,9 +110,8 @@ def process_case(vtu_path, view_direction, output_dir, head_mode='surface', gel_
             color_range = (-vmax, vmax)
         
         # Create plotter (off-screen for batch processing)
-        size = 800
+        size = int(4000 * (dpi / 600)) if use_png else 4000
         plotter = pv.Plotter(off_screen=True, window_size=(size, size))
-        plotter.add_axes()
         
         # Add head mesh based on mode
         if head_mode != 'off' and head_vol and head_vol.n_cells > 0:
@@ -113,16 +125,23 @@ def process_case(vtu_path, view_direction, output_dir, head_mode='surface', gel_
                 scalars='u',
                 cmap='PRGn',
                 clim=color_range,
-                show_scalar_bar=True,
+                show_scalar_bar=show_colorbar,
                 scalar_bar_args={
                     'title': 'Voltage (mV)',
                     'vertical': True,
                     'height': 0.6,
-                    'position_x': 0.85,
+                    'width': 0.08,
+                    'position_x': 0.90,
                     'position_y': 0.2,
-                    'title_font_size': 16,
-                    'label_font_size': 14,
-                }
+                    'title_font_size': 140,
+                    'label_font_size': 100,
+                    'fmt': '%+.0f',
+                    'n_labels': 9,
+                    'bold': True,
+                    'nan_annotation': False,
+                    'unconstrained_font_size': True,
+                    'use_opacity': False,
+                } if show_colorbar else None,
             )
         
         # Add gel mesh based on mode
@@ -154,19 +173,28 @@ def process_case(vtu_path, view_direction, output_dir, head_mode='surface', gel_
         # Set camera view
         set_camera_view(plotter, view_direction)
         
-        # Reset camera to fit scene
+        # Reset camera to fit scene tightly (minimize blank space)
         plotter.reset_camera()
+        
+        # Zoom in slightly to reduce blank space around head
+        plotter.camera.zoom(1.5)
         
         # Generate output filename (remove 'solution_' prefix)
         case_name = vtu_path.stem.replace('solution_', '')
-        output_filename = f"{case_name}.png"
-        output_path = output_dir / output_filename
         
-        # Save screenshot (will overwrite if exists)
-        plotter.screenshot(str(output_path))
+        if use_png:
+            output_path = output_dir / f"{case_name}.png"
+            plotter.screenshot(str(output_path), transparent_background=True, return_img=False, window_size=(size, size))
+        else:
+            output_path = output_dir / f"{case_name}.svg"
+            plotter.save_graphic(str(output_path), title=f"Voltage Distribution - {case_name}", raster=False, painter=True)
+        
         plotter.close()
         
-        print(f"  ✓ Saved: {output_filename}")
+        # Report file size
+        file_size_mb = output_path.stat().st_size / (1024 * 1024)
+        ext = 'png' if use_png else 'svg'
+        print(f"  ✓ Saved: {case_name}.{ext} ({file_size_mb:.1f} MB)")
         return True
         
     except Exception as e:
@@ -228,7 +256,23 @@ def main():
         "--clim",
         type=float,
         default=None,
-        help="Fixed symmetric color limit in mV (e.g., 150 for ±150 mV). If not set, auto-scales per case."
+        help="Fixed symmetric color limit in mV (e.g., 200 for ±200 mV). If not set, auto-scales per case."
+    )
+    parser.add_argument(
+        "--png",
+        action='store_true',
+        help="Save as PNG instead of SVG (better for grid layouts)"
+    )
+    parser.add_argument(
+        "--dpi",
+        type=int,
+        default=1200,
+        help="Effective DPI for high-res output (default: 1200)"
+    )
+    parser.add_argument(
+        "--colorbar",
+        action='store_true',
+        help="Show color bar with voltage scale (hidden by default)"
     )
     
     args = parser.parse_args()
@@ -250,17 +294,33 @@ def main():
     
     print(f"[info] Found {len(vtu_files)} VTU files to process")
     print(f"[info] Output directory: {args.output}")
+    print(f"[info] Format: {'PNG' if args.png else 'SVG'}")
+    if args.png:
+        size = int(4000 * (args.dpi / 600))
+        print(f"[info] Resolution: {args.dpi} DPI equivalent ({size}x{size} px)")
     print(f"[info] View: {args.view}, Head: {args.head}, Gel: {args.gel}, Electrodes: {not args.no_elec}")
     if args.clim:
         print(f"[info] Fixed color range: ±{args.clim:.1f} mV")
     else:
-        print(f"[info] Color range: auto per case")
+        print("[info] Color range: auto per case")
     print("-" * 60)
     
     # Process each file
     success_count = 0
     for vtu_file in vtu_files:
-        if process_case(vtu_file, args.view, args.output, args.head, args.gel, not args.no_elec, 1e3, args.clim):
+        if process_case(vtu_file,
+            args.view,
+            args.output,
+            args.head,
+            args.gel,
+            not
+            args.no_elec,
+            1e3,
+            args.clim,
+            args.png,
+            args.dpi,
+            args.colorbar
+        ):
             success_count += 1
     
     print("-" * 60)
