@@ -100,7 +100,7 @@ def build_f_matrix(cases, probe_coords, verbose=True):
     return F, case_names
 
 
-def save_outputs(f_matrix, probe_names, case_names, output_dir: Path):
+def save_outputs(f_matrix, probe_names, case_names, output_dir: Path, annotate=False, clim_mv=None):
     """Save F-matrix in multiple formats."""
     output_dir.mkdir(parents=True, exist_ok=True)
     
@@ -152,22 +152,27 @@ def save_outputs(f_matrix, probe_names, case_names, output_dir: Path):
 
     f_disp = f_matrix * scale
     # Use symmetric limits centered at zero for diverging colormap
-    max_abs = np.max(np.abs(f_disp))
+    if clim_mv is not None:
+        max_abs = clim_mv
+    else:
+        # Auto-detect from data
+        max_abs = np.max(np.abs(f_disp))
     vmin, vmax = -max_abs, max_abs
 
     im = ax.imshow(f_disp, aspect='auto', cmap='PRGn', vmin=vmin, vmax=vmax)
 
-    import matplotlib.patheffects as path_effects
-    cell_fontsize = 18
-    for i in range(n_probes):
-        for j in range(n_cases):
-            text = ax.text(j, i, fmt.format(f_disp[i, j]),
-                    ha="center", va="center", color="black", 
-                    fontsize=cell_fontsize, fontweight='bold')
-            text.set_path_effects([
-                path_effects.Stroke(linewidth=2, foreground='white'),
-                path_effects.Normal()
-            ])
+    if annotate:
+        import matplotlib.patheffects as path_effects
+        cell_fontsize = 18
+        for i in range(n_probes):
+            for j in range(n_cases):
+                text = ax.text(j, i, fmt.format(f_disp[i, j]),
+                        ha="center", va="center", color="black", 
+                        fontsize=cell_fontsize, fontweight='bold')
+                text.set_path_effects([
+                    path_effects.Stroke(linewidth=2, foreground='white'),
+                    path_effects.Normal()
+                ])
 
     tick_fontsize = 22
     ax.set_xlabel('Stimulation Case', fontsize=28, fontweight='bold', labelpad=20)
@@ -179,18 +184,16 @@ def save_outputs(f_matrix, probe_names, case_names, output_dir: Path):
     ax.set_yticks(range(n_probes))
     ax.set_yticklabels(probe_names, fontsize=tick_fontsize)
 
-    protocol = "Monopolar" if n_cases <= 10 else "Dipolar"
-    ax.set_title(f'{protocol} Stimulation: Probe Voltage Responses ({unit})', 
-                 fontsize=32, fontweight='bold', pad=30)
+    ax.set_title('Probe Voltage Response Map', fontsize=40, fontweight='bold', pad=30)
 
     cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.02)
-    cbar.set_label(f'Voltage ({unit})', fontsize=24, fontweight='bold')
+    cbar.set_label(f'Voltage ({unit})', fontsize=28, fontweight='bold')
     
     # Simple symmetric ticks from -max_abs to +max_abs
     ticks = np.linspace(-max_abs, max_abs, 9)
     cbar.set_ticks(ticks)
     cbar.set_ticklabels([fmt.format(t) for t in ticks])
-    cbar.ax.tick_params(labelsize=18)
+    cbar.ax.tick_params(labelsize=30)
 
     plt.tight_layout()
     heatmap_path = output_dir / "F_matrix_heatmap.svg"
@@ -209,6 +212,10 @@ def main():
                     help='Output directory')
     ap.add_argument('--pattern', type=str, default=None,
                     help='Glob pattern to include case names (e.g., "dipole_*")')
+    ap.add_argument('--annotate', action='store_true', 
+                    help='Annotate heatmap cells with numeric values')
+    ap.add_argument('--clim', type=float, default=None,
+                    help='Symmetric colorbar limit in mV (e.g., 200 for ±200 mV)')
     args = ap.parse_args()
 
     if not args.vtu_dir.exists():
@@ -245,7 +252,7 @@ def main():
 
     # Save outputs
     print(f"\nSaving outputs to {args.out}...")
-    save_outputs(f_result, probe_names, case_names, args.out)
+    save_outputs(f_result, probe_names, case_names, args.out, annotate=args.annotate, clim_mv=args.clim)
 
     print("\n=== Summary ===")
     print(f"F-matrix shape: {f_result.shape[0]} probes × {f_result.shape[1]} cases")
