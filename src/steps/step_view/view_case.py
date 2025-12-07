@@ -1602,13 +1602,13 @@ def main():
         # WHY: Medical/neuroscience users think in anatomical planes, not Cartesian axes
         # Sagittal (YZ): Divides left/right hemispheres (slices parallel to midline)
         # Coronal (XZ): Divides front/back (slices parallel to face)
-        # Axial (XY): Divides top/bottom (horizontal slices)
+        # Transverse (XY): Divides top/bottom (horizontal slices)
         # ──────────────────────────────────────────────────────────────────────
         v.addWidget(QLabel('Quick Planes:'))
         quick_row = QHBoxLayout()
         btn_x = QPushButton('Sagittal (YZ)')
         btn_y = QPushButton('Coronal (XZ)')
-        btn_z = QPushButton('Axial (XY)')
+        btn_z = QPushButton('Transverse (XY)')
         btn_x.setMinimumWidth(110)
         btn_y.setMinimumWidth(110)
         btn_z.setMinimumWidth(110)
