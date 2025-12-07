@@ -32,6 +32,8 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import matplotlib.patheffects as path_effects
+
 
 def compute_correlation_matrix(f_matrix):
     """Compute pairwise correlation between columns (cases)."""
@@ -130,30 +132,31 @@ def save_correlation_heatmap(corr_matrix, case_names, output_path: Path, *, anno
     tri_i, tri_j = np.triu_indices(n_cases, 1)
     mat[tri_i, tri_j] = 0.0
 
-    fig_size = max(24, n_cases * 1.5)
-    _, ax = plt.subplots(figsize=(fig_size, fig_size), dpi=300)
+    base_size = 0.6
+    fig_width = max(14, n_cases * base_size)
+    fig_height = max(12, n_cases * base_size * 0.9)
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height), dpi=300)
 
     im = ax.imshow(mat, cmap=cmap, vmin=vmin, vmax=vmax, aspect='auto')
 
-    ax.set_xlabel('Case', fontsize=28, fontweight='bold', labelpad=20)
-    ax.set_ylabel('Case', fontsize=28, fontweight='bold', labelpad=20)
-    ax.set_title('Case Correlation Matrix', fontsize=40, fontweight='bold', pad=30)
+    ax.set_xlabel('Case', fontsize=28, fontweight='bold', labelpad=15)
+    ax.set_ylabel('Case', fontsize=28, fontweight='bold', labelpad=15)
+    ax.set_title('Case Correlation', fontsize=40, fontweight='bold', pad=25)
 
     n_labels = min(n_cases, len(case_names))
-    tick_fontsize = 30
+    tick_fontsize = 20
     ax.set_xticks(range(n_labels))
-    ax.set_xticklabels(case_names[:n_labels], rotation=45, ha='right', fontsize=tick_fontsize)
+    ax.set_xticklabels(case_names[:n_labels], rotation=90, ha='center', fontsize=tick_fontsize)
     ax.xaxis.set_ticks_position('bottom')
     ax.xaxis.set_label_position('bottom')
 
     ax.set_yticks(range(n_labels))
-    ax.set_yticklabels(case_names[:n_labels], rotation=45, ha='right', fontsize=tick_fontsize)
+    ax.set_yticklabels(case_names[:n_labels], rotation=0, ha='right', fontsize=tick_fontsize)
     ax.yaxis.set_ticks_position('left')
     ax.yaxis.set_label_position('left')
 
-    cell_fontsize = 18
     if annotate:
-        import matplotlib.patheffects as path_effects
+        cell_fontsize = 18
         for i in range(n_cases):
             for j in range(i + 1):  # Lower triangle only
                 val = mat[i, j]
@@ -165,12 +168,24 @@ def save_correlation_heatmap(corr_matrix, case_names, output_path: Path, *, anno
                         path_effects.Normal()
                     ])
 
-    cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-    cbar.set_label('Correlation', fontsize=28, fontweight='bold')
-    cbar.ax.tick_params(labelsize=30)
+    cbar = plt.colorbar(
+        im,
+        ax=ax,
+        orientation='horizontal',
+        location='bottom',
+        fraction=0.04,
+        pad=0.18,
+        aspect=50,
+        shrink=0.7
+    )
+    cbar.set_label('Correlation', fontsize=20, fontweight='bold', labelpad=12)
+    cbar.ax.tick_params(labelsize=18, pad=8)
+    
+    # Explicitly format colorbar tick labels with sign
+    import matplotlib.ticker as ticker
+    cbar.ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%+.1f'))
 
-    plt.tight_layout()
-    plt.savefig(output_path, dpi=300)
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
 
 def main():
