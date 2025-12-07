@@ -1,24 +1,28 @@
 #!/usr/bin/env python3
 """
-Analyze the F-matrix to identify optimal dipole configurations for simulations.
+Analyze the F-matrix to assess case correlations and probe response statistics.
 
 Features:
-- Compute column correlations to assess unit stimuli pattern similarity.
-- Calculate column norms to evaluate signal strength.
+- Compute pairwise column (case) correlations to assess stimulation pattern similarity.
+- Compute probe statistics: mean, std, and coefficient of variation across cases.
 - Analyze matrix rank, condition number, and singular values.
-- Generate heatmaps for visualizing correlations.
+- Generate correlation heatmaps with RdBu_r colormap (red=positive, blue=negative).
+- Export analysis results to JSON and SVG formats.
 
 Usage:
-  python analyze_f_matrix.py --matrix f_matrix_complete/F_matrix.npy --out analysis_results
+  python analyze_f_matrix.py --matrix run/mono_F/F_matrix.npy --out run/mono_F
+  python analyze_f_matrix.py --matrix run/dip_F/F_matrix.npy --out run/dip_F --annotate
 
 Options:
   --matrix <path>       Path to the F-matrix file in .npy format.
   --out <directory>     Directory to save analysis results (default: analysis_results).
-  --abs-corr            Use absolute values for correlation heatmaps (default: True).
-  --no-abs-corr         Use signed correlations for heatmaps.
-  --annotate            Annotate heatmap cells with numeric values (default: True).
-  --no-annotate         Do not annotate heatmap cells.
+  --annotate            Annotate heatmap cells with numeric correlation values.
+  --no-annotate         Do not annotate heatmap cells (default).
   --fmt <format>        Format string for numeric annotations (default: "{:.2f}").
+
+Outputs:
+  - correlation_heatmap.svg: Lower-triangle correlation matrix with statistics in title.
+  - analysis_results.json: Matrix properties, correlation statistics, and probe statistics.
 """
 import argparse
 import csv
@@ -105,17 +109,22 @@ def analyze_matrix_properties(f_matrix):
     }
 
 
-def save_correlation_heatmap(corr_matrix, case_names, output_path: Path, *, abs_val: bool = True, annotate: bool = True, fmt: str = "{:.2f}"):
-    """Save correlation matrix as heatmap with optional absolute values and annotations."""
+def save_correlation_heatmap(corr_matrix, case_names, output_path: Path, *, annotate: bool = True, fmt: str = "{:.2f}"):
+    """Save correlation matrix as heatmap with optional annotations.
+    
+    Displays lower triangle only, with RdBu_r colormap (red=positive, blue=negative).
+    
+    Parameters:
+        corr_matrix: (n_cases, n_cases) correlation matrix
+        case_names: list of case names for axis labels
+        output_path: path to save SVG heatmap
+        annotate: if True, annotate cells with correlation values
+        fmt: format string for annotations
+    """
     # Prepare plotting matrix
     mat = np.array(corr_matrix, copy=True)
-    if abs_val:
-        mat = np.abs(mat)
-        vmin, vmax = 0.0, 1.0
-        cmap = plt.get_cmap('Greens')
-    else:
-        vmin, vmax = -1.0, 1.0
-        cmap = plt.get_cmap('PRGn')
+    vmin, vmax = -1.0, 1.0
+    cmap = plt.get_cmap('RdBu_r')
 
     n_cases = mat.shape[0]
     tri_i, tri_j = np.triu_indices(n_cases, 1)
@@ -128,18 +137,15 @@ def save_correlation_heatmap(corr_matrix, case_names, output_path: Path, *, abs_
 
     ax.set_xlabel('Case', fontsize=28, fontweight='bold', labelpad=20)
     ax.set_ylabel('Case', fontsize=28, fontweight='bold', labelpad=20)
-    ax.set_title('Case Correlation Matrix', fontsize=32, fontweight='bold', pad=30)
+    ax.set_title('Case Correlation Matrix', fontsize=40, fontweight='bold', pad=30)
 
     n_labels = min(n_cases, len(case_names))
-    
-    tick_fontsize = 22
-    
+    tick_fontsize = 30
     ax.set_xticks(range(n_labels))
-    ax.set_xticklabels(case_names[:n_labels], rotation=45, ha='right',
-                       fontsize=tick_fontsize)
+    ax.set_xticklabels(case_names[:n_labels], rotation=45, ha='right', fontsize=tick_fontsize)
     ax.xaxis.set_ticks_position('bottom')
     ax.xaxis.set_label_position('bottom')
-    
+
     ax.set_yticks(range(n_labels))
     ax.set_yticklabels(case_names[:n_labels], rotation=45, ha='right', fontsize=tick_fontsize)
     ax.yaxis.set_ticks_position('left')
@@ -160,26 +166,22 @@ def save_correlation_heatmap(corr_matrix, case_names, output_path: Path, *, abs_
                     ])
 
     cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-    cbar.set_label('Correlation' + (' (abs)' if abs_val else ''), fontsize=24, fontweight='bold')
-    cbar.ax.tick_params(labelsize=18)
+    cbar.set_label('Correlation', fontsize=28, fontweight='bold')
+    cbar.ax.tick_params(labelsize=30)
 
     plt.tight_layout()
     plt.savefig(output_path, dpi=300)
     plt.close()
-
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--matrix', type=Path, required=True, help='Path to F_matrix.npy')
     ap.add_argument('--out', type=Path, default=Path('analysis_results'), 
                     help='Output directory')
-    ap.add_argument('--abs-corr', dest='abs_corr', action='store_true', help='Use absolute value of correlations for heatmap')
-    ap.add_argument('--no-abs-corr', dest='abs_corr', action='store_false', help='Do not use absolute value of correlations for heatmap')
-    ap.set_defaults(abs_corr=True)
     grp = ap.add_mutually_exclusive_group()
-    grp.add_argument('--annotate', dest='annotate', action='store_true', help='Annotate cells with numeric values (default)')
-    grp.add_argument('--no-annotate', dest='annotate', action='store_false', help='Do not annotate cells')
-    ap.set_defaults(annotate=True)
+    grp.add_argument('--annotate', dest='annotate', action='store_true', help='Annotate cells with numeric values')
+    grp.add_argument('--no-annotate', dest='annotate', action='store_false', help='Do not annotate cells (default)')
+    ap.set_defaults(annotate=False)
     ap.add_argument('--fmt', dest='fmt', default='{:.2f}', help='Format string for numeric annotations, e.g. "{:.2f}")')
 
     args = ap.parse_args()
@@ -221,7 +223,7 @@ def main():
     
     # Save correlation heatmap
     corr_heatmap_path = args.out / "correlation_heatmap.svg"
-    save_correlation_heatmap(corr_matrix, case_names, corr_heatmap_path, abs_val=args.abs_corr, annotate=args.annotate, fmt=args.fmt)
+    save_correlation_heatmap(corr_matrix, case_names, corr_heatmap_path, annotate=args.annotate, fmt=args.fmt)
     print(f"  Saved: {corr_heatmap_path}")
     
     # 3. Compute probe statistics (row-wise analysis)

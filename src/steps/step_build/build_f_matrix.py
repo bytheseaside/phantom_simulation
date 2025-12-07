@@ -2,15 +2,24 @@
 """
 build_f_matrix.py
 
-Build forward transfer matrix (F-matrix) for all cases in a VTU directory.
-Samples all probes for each case and creates:
-  - F_matrix.npy (raw matrix)
-  - F_matrix.csv (normalized for readability)
-  - F_matrix_heatmap.png (quick visual of measured values)
-  - metadata.json (case info)
+Build forward transfer matrix (F-matrix) for stimulation cases in a VTU directory.
+Samples voltage values at probe locations for each case and creates:
+  - F_matrix.npy (raw matrix in Volts)
+  - F_matrix.csv (matrix with probe and case names for inspection)
+  - F_matrix_heatmap.svg (visual heatmap with auto-scaled units and optional annotations)
+  - metadata.json (matrix dimensions, case names, probe names, and value statistics)
 
 Usage:
-  python build_f_matrix.py --vtu-dir run_1/solutions --probes probes_generated.csv --out f_matrix_output
+  python build_f_matrix.py --vtu-dir run/solutions --probes run/probes.csv --out run/mono_F
+  python build_f_matrix.py --vtu-dir run/solutions --probes run/probes.csv --out run/dip_F --pattern "D_*" --clim 200
+
+Options:
+  --vtu-dir <path>      Directory containing VTU solution files (solution_*.vtu).
+  --probes <path>       CSV file with probe coordinates (name,x,y,z).
+  --out <directory>     Output directory for F-matrix and visualizations.
+  --pattern <glob>      Glob pattern to filter case names (e.g., "D_*" for dipolar only).
+  --annotate            Annotate heatmap cells with numeric voltage values.
+  --clim <value>        Symmetric colorbar limit in mV (e.g., 200 for ±200 mV).
 """
 import argparse
 import json
@@ -55,7 +64,19 @@ def read_probes_coords(path: Path):
 
 
 def sample_probes_from_vtu(vtu_path: Path, probe_coords: np.ndarray, array_name='u'):
-    """Sample voltage values at probe locations from VTU file."""
+    """Sample voltage values at probe locations from VTU file.
+    
+    Extracts head surface (region_id=2) and samples scalar field 'u' (voltage)
+    at the closest surface point to each probe coordinate.
+    
+    Parameters:
+        vtu_path: path to VTU solution file
+        probe_coords: (n_probes, 3) array of probe coordinates
+        array_name: name of scalar field to sample (default: 'u' for voltage)
+    
+    Returns:
+        (n_probes,) array of sampled voltage values in Volts
+    """
     grid = pv.read(str(vtu_path))
     
     # Extract head surface (region_id=2)
@@ -135,7 +156,8 @@ def save_outputs(f_matrix, probe_names, case_names, output_dir: Path, annotate=F
     fig_height = max(18, n_probes * 1.2)
     _, ax = plt.subplots(figsize=(fig_width, fig_height), dpi=300)
 
-    # Auto-select display unit using 95th percentile
+    # Auto-select display unit using 95th percentile for optimal readability
+    # Converts from Volts to mV or μV based on data magnitude
     p95 = np.percentile(np.abs(f_matrix), 95)
     if p95 >= 1.0:
         scale = 1.0
@@ -151,9 +173,11 @@ def save_outputs(f_matrix, probe_names, case_names, output_dir: Path, annotate=F
         fmt = '{:.0f}'
 
     f_disp = f_matrix * scale
-    # Use symmetric limits centered at zero for diverging colormap
+    # Use symmetric limits centered at zero for diverging PRGn colormap
+    # (purple=negative, green=positive)
     if clim_mv is not None:
-        max_abs = clim_mv
+        # Convert clim from mV to display units (clim is always in mV, scale converts V to display units)
+        max_abs = clim_mv * (scale / 1e3)  # clim in mV, scale is 1.0 (V), 1e3 (mV), or 1e6 (μV)
     else:
         # Auto-detect from data
         max_abs = np.max(np.abs(f_disp))
