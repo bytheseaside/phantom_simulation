@@ -1,24 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ------------------------------------------------------------------------------
-# Step 4 — Post-processing: probe VTU with PyVista
-#
-# Usage:
-#   bash run_probing.sh --probes /path/to/probes.csv --file /path/to/solution_caseA.vtu
-#   bash run_probing.sh --probes /path/to/probes.csv --folder /path/to/cases/
-#
-# Pre-reqs:
-#   - probes.csv                    # at the ROOT of the run dir
-#   - cases/solution_*.vtu          # produced by step 3, or specify via VTU_FILES or VTU_FOLDER
-#
-# Effect:
-#   - Copies probe_vtu.py into the run dir (from the folder of this script)
-#   - For each .vtu in cases/, writes cases/probes_<case>.csv
-#   - Log at step4.log
-#
-# ------------------------------------------------------------------------------
-
 # Initialize variables
 RUN_DIR=""
 SINGLE_FILE=""
