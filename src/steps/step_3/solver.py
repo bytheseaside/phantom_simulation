@@ -1,523 +1,652 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-solver.py — Head-phantom conduction solver (dolfinx 0.7.x) with single-file VTU export
-
-Model
------
-Solve the steady conduction equation on a two-material head phantom:
-
-    - div( σ ∇u ) = 0  in Ω = Ω_gel ∪ Ω_head
-
-Materials (piecewise constant, isotropic):
-- gel  : σ_gel (default 0.33 S/m; override with env SIGMA_GEL)
-- head : σ_head (default 0.02 S/m; override with env SIGMA_HEAD)
-
-Boundary conditions
--------------------
-- Internal electrode surfaces carved into the gel are Physical Surfaces named
-  'v_1'..'v_9'. On each such surface we impose Dirichlet:  u = V_i  (Volts).
-  Values come from simulation_cases.csv.
-- Gel–head interface: continuity of u and σ∂_n u (automatic with a conformal mesh).
-- Outer head surface: natural Neumann (zero normal current), i.e., "do nothing".
-
-Notes
---------------------
-- If **no Dirichlet patches are applied** (no electrode facets found): pure Neumann → gauge-free → skip.
-- If **all applied Dirichlet values are equal**, this is still physically meaningful
-  (Dirichlet islands inside a Neumann domain). We **keep** such cases.
-
-Inputs (in run directory)
--------------------------
-- mesh.msh
-    Gmsh v4.1 mesh with Physical Volumes: "head", "gel", and Physical Surfaces "v_1".. "v_9".
-- simulation_cases.csv
-    Header: case,v_1,...,v_9   (Volt values, may be ±; empty cells interpreted as 0.0)
-
-Outputs (per case → ./solutions/)
----------------------------------
-- solution_<case>.vtu
-    Single VTU with:
-      * tetra10 volume cells, point_data['u'], cell_data['region_id']
-          region_id: 1 = gel, 2 = head
-      * triangle cells for internal electrode surfaces, cell_data['facet_id']
-          facet_id: 1..9 for v_1..v_9
-- probes_<case>.csv
-    If probes.csv exists: sampled potentials at requested points.
-
-Environment overrides
----------------------
-  SIGMA_GEL=0.5 SIGMA_HEAD=0.02 python solver.py
-"""
 from __future__ import annotations
 import os
-import csv
+import sys
+import json
 import time
+import argparse
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 
 import numpy as np
 import meshio
-import h5py
 
 from mpi4py import MPI
 from petsc4py import PETSc
 
 from dolfinx import fem
-from dolfinx.io import gmshio, XDMFFile
+from dolfinx.io import gmshio
 from dolfinx.fem.petsc import LinearProblem
 import ufl
-from dolfinx import geometry
 
 # --------------------------------------------------------------------------------------
-# Environment, paths, and constants
+# Constants
 # --------------------------------------------------------------------------------------
 
 COMM = MPI.COMM_WORLD
 RANK = COMM.rank
 
-RUN_DIR = Path.cwd()
+# Exit codes
+EXIT_SUCCESS = 0
+EXIT_VALIDATION_ERROR = 1
+EXIT_SOLVER_ERROR = 2
 
-RUN_DIR_PARENT = RUN_DIR.parent # Some input files are in the parent folder
+# --------------------------------------------------------------------------------------
+# Argument parsing
+# --------------------------------------------------------------------------------------
 
-MSH_PATH = RUN_DIR_PARENT / "mesh.msh"
-CASES_CSV = RUN_DIR_PARENT / "simulation_cases.csv"
-OUT_DIR = RUN_DIR_PARENT / "cases"
-OUT_DIR.mkdir(exist_ok=True)
+def parse_args() -> argparse.Namespace:
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(
+        description="FEM solver for electrostatics driven by manifest configuration."
+    )
+    parser.add_argument(
+        "manifest",
+        type=str,
+        help="Path to the manifest JSON file"
+    )
+    parser.add_argument(
+        "--validate-only",
+        action="store_true",
+        help="Validate manifest and mesh compatibility without solving"
+    )
+    return parser.parse_args()
 
+# --------------------------------------------------------------------------------------
+# Manifest handling
+# --------------------------------------------------------------------------------------
 
-# Electrode names we accept (strict): v_1..v_9 (case-insensitive in the mesh)
-ELECTRODE_NAMES_V = [f"v_{i}" for i in range(1, 10)]
-
-# Default conductivities (S/m) + env overrides
-SIGMA_GEL_DEFAULT = 0.33
-SIGMA_HEAD_DEFAULT = 4.1 # Effective value for conductive head phantom
-
-def _fenv(name: str, default: float) -> float:
-    """
-    Retrieve an environment variable as a float.
-
-    Args:
-        name (str): The name of the environment variable to retrieve.
-        default (float): The default value to return if the environment variable is not set or cannot be converted to float.
-
-    Returns:
-        float: The value of the environment variable converted to float, or the default value if not set or conversion fails.
-    """
+def load_manifest(manifest_path: Path) -> Dict[str, Any]:
+    """Load and parse the manifest JSON file."""
+    if not manifest_path.exists():
+        if RANK == 0:
+            print(f"ERROR: Manifest file not found: {manifest_path}")
+        sys.exit(EXIT_VALIDATION_ERROR)
+    
     try:
-        return float(os.environ.get(name, default))
-    except Exception:
-        return default
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            manifest = json.load(f)
+    except json.JSONDecodeError as e:
+        if RANK == 0:
+            print(f"ERROR: Invalid JSON in manifest: {e}")
+        sys.exit(EXIT_VALIDATION_ERROR)
+    
+    return manifest
 
-SIGMA_GEL = _fenv("SIGMA_GEL", SIGMA_GEL_DEFAULT)
-SIGMA_HEAD = _fenv("SIGMA_HEAD", SIGMA_HEAD_DEFAULT)
+def validate_manifest_schema(manifest: Dict[str, Any]) -> None:
+    """Validate that the manifest has the required structure."""
+    required_keys = ["mesh", "outputs", "volumes", "cases"]
+    missing = [k for k in required_keys if k not in manifest]
+    if missing:
+        if RANK == 0:
+            print(f"ERROR: Manifest missing required keys: {missing}")
+        sys.exit(EXIT_VALIDATION_ERROR)
+    
+    # Validate volumes structure
+    if not isinstance(manifest["volumes"], dict):
+        if RANK == 0:
+            print("ERROR: 'volumes' must be a dictionary")
+        sys.exit(EXIT_VALIDATION_ERROR)
+    
+    for vol_id, vol_config in manifest["volumes"].items():
+        try:
+            int(vol_id)
+        except ValueError:
+            if RANK == 0:
+                print(f"ERROR: Volume ID '{vol_id}' must be an integer")
+            sys.exit(EXIT_VALIDATION_ERROR)
+        
+        if "sigma" not in vol_config:
+            if RANK == 0:
+                vol_name = vol_config.get("name", vol_id)
+                print(f"ERROR: Volume '{vol_name}' (ID: {vol_id}) missing 'sigma'")
+            sys.exit(EXIT_VALIDATION_ERROR)
+    
+    # Validate cases structure
+    if not isinstance(manifest["cases"], list) or len(manifest["cases"]) == 0:
+        if RANK == 0:
+            print("ERROR: 'cases' must be a non-empty list")
+        sys.exit(EXIT_VALIDATION_ERROR)
+    
+    for i, case in enumerate(manifest["cases"]):
+        if "case_name" not in case:
+            if RANK == 0:
+                print(f"ERROR: Case {i} missing 'case_name'")
+            sys.exit(EXIT_VALIDATION_ERROR)
+        
+        if "dirichlet" not in case:
+            if RANK == 0:
+                print(f"ERROR: Case '{case['case_name']}' missing 'dirichlet'")
+            sys.exit(EXIT_VALIDATION_ERROR)
+        
+        if not isinstance(case["dirichlet"], list):
+            if RANK == 0:
+                print(f"ERROR: Case '{case['case_name']}' 'dirichlet' must be a list")
+            sys.exit(EXIT_VALIDATION_ERROR)
+        
+        # Check that each case has at least one Dirichlet BC
+        if len(case["dirichlet"]) == 0:
+            if RANK == 0:
+                print(f"ERROR: Case '{case['case_name']}' has no Dirichlet conditions.")
+                print("       At least one Dirichlet BC is required to define the problem.")
+            sys.exit(EXIT_VALIDATION_ERROR)
+        
+        # Validate Dirichlet BC structure
+        for j, bc in enumerate(case["dirichlet"]):
+            if "target" not in bc or "value" not in bc:
+                if RANK == 0:
+                    print(f"ERROR: Case '{case['case_name']}' BC {j} missing 'target' or 'value'")
+                sys.exit(EXIT_VALIDATION_ERROR)
 
 # --------------------------------------------------------------------------------------
-# Helpers
+# Mesh utilities
 # --------------------------------------------------------------------------------------
 
-def read_field_data_ids(msh_path: Path) -> Dict[str, int]:
+def get_physical_ids_from_mesh(msh_path: Path) -> Tuple[Dict[str, int], Dict[int, str]]:
     """
-    Reads the field data from a Gmsh mesh file and returns a dictionary mapping
-    physical group names to their corresponding integer IDs.
+    Read physical group information from a Gmsh mesh file.
+    
+    Returns:
+        Tuple of (name_to_id, id_to_name) dictionaries.
+    """
+    mesh_data = meshio.read(str(msh_path))
+    field_data = mesh_data.field_data  # {name: [id, dim]}
+    
+    name_to_id = {name: int(v[0]) for name, v in field_data.items()}
+    id_to_name = {int(v[0]): name for name, v in field_data.items()}
+    
+    return name_to_id, id_to_name
 
+def validate_mesh_against_manifest(
+    mesh, cell_tags, facet_tags, manifest: Dict[str, Any], 
+    id_to_name: Dict[int, str]
+) -> None:
+    """
+    Validate that the mesh and manifest are compatible.
+    
+    Checks:
+    - All mesh volumes have sigma defined in manifest
+    - Warns about manifest volumes not in mesh
+    - Warns about manifest surfaces not in mesh
+    - Logs physical surfaces without Dirichlet BCs
+    """
+    # Get all physical volume IDs from mesh
+    mesh_volume_ids = set(cell_tags.values)
+    
+    # Get all physical volume IDs from manifest
+    manifest_volume_ids = {int(vid) for vid in manifest["volumes"].keys()}
+    
+    # Check: volumes in mesh but not in manifest (ERROR)
+    missing_in_manifest = mesh_volume_ids - manifest_volume_ids
+    if missing_in_manifest:
+        if RANK == 0:
+            print("ERROR: The following physical volumes exist in the mesh but have no conductivity defined:")
+            for vid in sorted(missing_in_manifest):
+                vname = id_to_name.get(vid, "<unnamed>")
+                print(f"  - Volume '{vname}' (ID: {vid})")
+            print("All volumes must have a conductivity (sigma) defined in the manifest.")
+        sys.exit(EXIT_VALIDATION_ERROR)
+    
+    # Check: volumes in manifest but not in mesh (WARN)
+    extra_in_manifest = manifest_volume_ids - mesh_volume_ids
+    if extra_in_manifest and RANK == 0:
+        print("WARNING: The following volumes are defined in manifest but not found in mesh:")
+        for vid in sorted(extra_in_manifest):
+            vol_config = manifest["volumes"][str(vid)]
+            vname = vol_config.get("name", "<unnamed>")
+            print(f"  - Volume '{vname}' (ID: {vid})")
+    
+    # Get all physical surface IDs from mesh
+    mesh_surface_ids = set(facet_tags.values)
+    
+    # Collect all surfaces mentioned in Dirichlet BCs
+    dirichlet_surface_ids = set()
+    for case in manifest["cases"]:
+        for bc in case["dirichlet"]:
+            dirichlet_surface_ids.add(int(bc["target"]))
+    
+    # Check: Dirichlet surfaces in manifest but not in mesh (WARN)
+    missing_surfaces = dirichlet_surface_ids - mesh_surface_ids
+    if missing_surfaces and RANK == 0:
+        print("WARNING: The following surfaces are referenced in Dirichlet BCs but not found in mesh:")
+        for sid in sorted(missing_surfaces):
+            sname = id_to_name.get(sid, "<unnamed>")
+            print(f"  - Surface '{sname}' (ID: {sid})")
+    
+    # Info: surfaces in mesh without Dirichlet BCs
+    unused_surfaces = mesh_surface_ids - dirichlet_surface_ids
+    if unused_surfaces and RANK == 0:
+        print(f"INFO: {len(unused_surfaces)} physical surface(s) in mesh have no Dirichlet BC (natural Neumann):")
+        for sid in sorted(unused_surfaces):
+            sname = id_to_name.get(sid, "<unnamed>")
+            print(f"  - Surface '{sname}' (ID: {sid})")
+
+def build_sigma_from_manifest(mesh, cell_tags, volumes_config: Dict[str, Dict[str, Any]]):
+    """
+    Build piecewise constant conductivity function from manifest volumes configuration.
+    
     Parameters:
-        msh_path (Path): The path to the Gmsh mesh file (.msh).
-
+        mesh: The mesh object.
+        cell_tags: Mesh tags for cells (volumes).
+        volumes_config: Dictionary mapping volume ID (as string) to config dict with 'sigma'.
+    
     Returns:
-        Dict[str, int]: A dictionary where keys are physical group names (str)
-        and values are their associated integer IDs (int) as used for tag lookups
-        in dolfinx.
-    """
-    fd = meshio.read(str(msh_path)).field_data  # {name: [id, dim]}
-    return {name: int(v[0]) for name, v in fd.items()}
-
-def load_cases(csv_path: Path) -> List[Tuple[str, Dict[str, float]]]:
-    """
-    Parse a CSV file containing simulation cases and electrode potentials.
-
-    Args:
-        csv_path (Path): Path to the simulation_cases.csv file.
-            Expected CSV format:
-            ```
-                case,v_1,v_2,v_3,v_4,v_5,v_6,v_7,v_8,v_9
-                case1,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0
-                case2,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0
-                ...
-            ```
-
-    Returns:
-        List[Tuple[str, Dict[str, float]]]: 
-            A list of tuples, each containing:
-                - case_name (str): The name of the simulation case.
-                - potentials (Dict[str, float]): A dictionary mapping electrode names ('v_1'..'v_9') to their potential values.
-
-    Raises:
-        FileNotFoundError: If the CSV file does not exist at the specified path.
-        RuntimeError: If the CSV file is empty, malformed, or missing required columns ('v_1'..'v_9').
-
-    Notes:
-        - The CSV file must have a header row with columns: 'case', 'v_1', ..., 'v_9'.
-        - Electrode potentials can be empty, which are interpreted as 0.0.
-    """
-    if not csv_path.exists():
-        raise FileNotFoundError(f"Missing simulation_cases.csv at: {csv_path}")
-    rows: List[Tuple[str, Dict[str, float]]] = []
-    with csv_path.open("r", encoding="utf-8") as f:
-        r = csv.DictReader(f)
-        if r.fieldnames is None:
-            raise RuntimeError("simulation_cases.csv is empty or missing header.")
-        headers = [h.strip() for h in r.fieldnames]
-        have_v = all(f"v_{i}" in headers for i in range(1, 10))
-        if not have_v:
-            raise RuntimeError("CSV must contain columns: case,v_1,...,v_9")
-        for row in r:
-            case = row["case"].strip()
-            pots: Dict[str, float] = {}
-            for i in range(1, 10):
-                key = f"v_{i}"
-                val = float(row[key]) if row[key] != "" else 0.0
-                pots[key] = val
-            rows.append((case, pots))
-    return rows
-
-def build_sigma(mesh, cell_tags, id_head: int | None, sig_gel: float, sig_head: float):
-    """
-    Constructs a piecewise constant conductivity function `σ` over the given mesh.
-
-    Parameters:
-        mesh: The mesh object over which the conductivity function is defined.
-        cell_tags: A mesh tag object used to identify specific regions (cells) in the mesh.
-        id_head (int | None): The tag identifier for the 'head' region. If None, no override is performed.
-        sig_gel (float): The conductivity value to assign to all cells by default.
-        sig_head (float): The conductivity value to assign to cells tagged as 'head'.
-
-    Returns:
-        sigma: A DG-0 (piecewise constant) function representing the conductivity distribution,
-               where `σ = sig_gel` in all cells, except in cells tagged with id_head, where `σ = sig_head`.
+        sigma: DG-0 function with conductivity values assigned per volume.
     """
     V0 = fem.functionspace(mesh, ("DG", 0))
     sigma = fem.Function(V0)
-    sigma.x.array[:] = sig_gel
-    if id_head is not None:
-        cells = cell_tags.find(id_head)
+    sigma.name = "sigma"
+    
+    # Initialize to zero (will be overwritten, but good practice)
+    sigma.x.array[:] = 0.0
+    
+    # Assign conductivity for each volume
+    for vol_id_str, vol_config in volumes_config.items():
+        vol_id = int(vol_id_str)
+        sig_value = float(vol_config["sigma"])
+        
+        cells = cell_tags.find(vol_id)
         if cells.size > 0:
-            sigma.x.array[cells] = sig_head
+            sigma.x.array[cells] = sig_value
+    
     return sigma
 
-def make_region_id(mesh, cell_tags, id_head: int | None, id_gel: int | None):
+def build_region_id_from_manifest(mesh, cell_tags, volumes_config: Dict[str, Dict[str, Any]]):
     """
-    Assigns integer region flags to mesh cells based on provided cell tag IDs.
-
-    Parameters
-    ----------
-    mesh : dolfinx.mesh.Mesh
-        The mesh on which to define the region IDs.
-    cell_tags : dolfinx.mesh.meshtags
-        Mesh tags object containing cell tag information.
-    id_head : int or None
-        The tag ID corresponding to the "head" region. If None, no cells are assigned as head.
-    id_gel : int or None
-        The tag ID corresponding to the "gel" region. If None, no cells are assigned as gel.
-
-    Returns
-    -------
-    region : dolfinx.fem.Function
-        A DG-0 function over the mesh with integer values:
-            1 for gel region cells,
-            2 for head region cells,
-            0 for all other cells (should not occur; default start value).
-
-    Notes
-    -----
-    - The function assumes that cell_tags contains the IDs for gel and head regions.
-    - The returned function can be used to identify regions in further computations.
+    Build region_id function using physical volume IDs directly.
+    
+    Parameters:
+        mesh: The mesh object.
+        cell_tags: Mesh tags for cells (volumes).
+        volumes_config: Dictionary mapping volume ID to config dict.
+    
+    Returns:
+        region: DG-0 function where region_id[cell] = physical_volume_id.
     """
     V0 = fem.functionspace(mesh, ("DG", 0))
-    region = fem.Function(V0); region.name = "region_id"
-    region.x.array[:] = 0.0
-    if id_gel is not None:
-        gel_cells = cell_tags.find(id_gel)
-        if gel_cells.size > 0:
-            region.x.array[gel_cells] = 1.0
-    if id_head is not None:
-        head_cells = cell_tags.find(id_head)
-        if head_cells.size > 0:
-            region.x.array[head_cells] = 2.0
+    region = fem.Function(V0)
+    region.name = "region_id"
+    region.x.array[:] = 0
+    
+    # Assign physical volume ID to each cell
+    for vol_id_str in volumes_config.keys():
+        vol_id = int(vol_id_str)
+        cells = cell_tags.find(vol_id)
+        if cells.size > 0:
+            region.x.array[cells] = vol_id
+    
     return region
 
-def dirichlet_from_electrodes(voltage_space, facet_tags, id_by_name: Dict[str, int], pots: Dict[str, float]):
+def build_dirichlet_bcs_from_manifest(
+    voltage_space, facet_tags, dirichlet_list: List[Dict[str, Any]]
+):
     """
-    Build Dirichlet boundary conditions (BCs) for electrode surfaces.
-
-    For each electrode surface named 'v_1' to 'v_9' in the mesh, this function creates a Dirichlet BC
-    that sets the potential u = V_i, where V_i is provided in the 'pots' dictionary. The function
-    expects the mesh to have physical groups named 'v_1'...'v_9' (case-insensitive), and will print
-    warnings if any are missing or have no associated facets.
-
-    Args:
-        voltage_space: The function space (dolfinx.fem.FunctionSpace) for the solution.
-        facet_tags: Mesh tags for facets (dolfinx.mesh.meshtags).
-        id_by_name: Dictionary mapping physical group names to their integer IDs.
-        pots: Dictionary mapping electrode names ('v_1'..'v_9') to their potential values.
-
+    Build Dirichlet boundary conditions from manifest configuration.
+    
+    Parameters:
+        voltage_space: Function space for the solution.
+        facet_tags: Mesh tags for facets (surfaces).
+        dirichlet_list: List of dicts with 'target' (surface ID) and 'value' (potential).
+    
     Returns:
-        List of Dirichlet BC objects for all found electrodes.
-
-    Notes:
-        - Only electrodes with both a valid tag and at least one facet in the mesh will receive a BC.
-        - If an electrode is missing or has no facets, a warning is printed (on rank 0).
-        - The function expects all electrode names to be in lower case in the mesh.
+        List of Dirichlet BC objects.
     """
     bcs = []
     mesh = voltage_space.mesh
     fdim = mesh.topology.dim - 1
-
-    name_to_id = {name.lower(): pid for name, pid in id_by_name.items() if name.lower().startswith("v_")}
-
-    for i in range(1, 10):
-        ename = f"v_{i}"
-        val = float(pots.get(ename, 0.0))
-        tag = name_to_id.get(ename)
-        if tag is None:
-            if RANK == 0:
-                print(f"[warn] Missing Physical tag for electrode {ename}")
+    
+    for bc_config in dirichlet_list:
+        surf_id = int(bc_config["target"])
+        value = float(bc_config["value"])
+        
+        # Find facets with this physical ID
+        facets = facet_tags.find(surf_id)
+        
+        if facets.size == 0:
+            # Already warned in validation, skip
             continue
-        entities = facet_tags.find(tag)
-        if entities.size == 0:
-            if RANK == 0:
-                print(f"[warn] Electrode {ename} (id={tag}) has no facets")
-            continue
-        dofs = fem.locate_dofs_topological(voltage_space, fdim, entities)
-        u_d = fem.Function(voltage_space)
-        u_d.x.array[:] = val
-        bcs.append(fem.dirichletbc(u_d, dofs))
+        
+        # Locate DOFs on these facets
+        dofs = fem.locate_dofs_topological(voltage_space, fdim, facets)
+        
+        # Create constant function with the boundary value
+        u_bc = fem.Function(voltage_space)
+        u_bc.x.array[:] = value
+        
+        bcs.append(fem.dirichletbc(u_bc, dofs))
+    
     return bcs
 
-def _write_vtu_from_h5(h5_path: Path, vtu_path: Path, electrodes: List[Tuple[np.ndarray, np.ndarray]]):
+# --------------------------------------------------------------------------------------
+# VTU output
+# --------------------------------------------------------------------------------------
+
+def extract_dirichlet_surface_triangles(
+    mesh, facet_tags, dirichlet_list: List[Dict[str, Any]]
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
-    Convert the dolfinx H5 to a single VTU with:
-      - tetra10 cells and point_data['u'], cell_data['region_id']
-      - one triangle cell block (tri3) for internal electrodes with cell_data['facet_id']
-    The 'electrodes' argument is a list of (triangles, facet_ids), where:
-      triangles: (N, 3) array of vertex indices
-      facet_ids: (N,) array of ints in 1..9
-    """
-    with h5py.File(h5_path, "r") as f:
-        points = np.array(f["/Mesh/mesh/geometry"], dtype=float)
-        topo   = np.array(f["/Mesh/mesh/topology"], dtype=np.int64)
-
-        def _read_func(name: str):
-            grp = f.get(f"/Function/{name}")
-            if grp is None:
-                return None
-            keys = list(grp.keys())
-            if not keys:
-                return None
-            arr = np.array(grp[keys[0]]).reshape(-1)
-            return arr
-
-        u = _read_func("u")
-        region = _read_func("region_id")
-
-    # Build cell blocks
-    cell_blocks = [meshio.CellBlock("tetra10", topo)]
-    cell_data: Dict[str, List[np.ndarray]] = {}
-    if region is not None:
-        cell_data["region_id"] = [region]
-    else:
-        cell_data["region_id"] = [np.zeros(topo.shape[0], dtype=np.int32)]
-
-    # Merge all electrode triangles into one block (tri3)
-    if electrodes:
-        tris_all = np.concatenate([t for (t, _) in electrodes], axis=0) if electrodes else np.empty((0, 3), dtype=np.int64)
-        ids_all  = np.concatenate([i for (_, i) in electrodes], axis=0) if electrodes else np.empty((0,), dtype=np.int32)
-        if tris_all.size > 0:
-            cell_blocks.append(meshio.CellBlock("triangle", tris_all))
-
-            # ---- build aligned cell_data lists ----
-            # region_id: one array for tetra block + one dummy for triangles
-            if "region_id" not in cell_data:
-                cell_data["region_id"] = [np.zeros(topo.shape[0], dtype=np.int32)]
-            cell_data["region_id"].append(np.zeros(tris_all.shape[0], dtype=np.int32))
-
-            # facet_id: dummy for volume block + real ids for triangles
-            cell_data["facet_id"] = [
-                np.zeros(topo.shape[0], dtype=np.int32),  # dummy for tets
-                ids_all,
-            ]
-
-    point_data = {}
-    if u is not None:
-        point_data["u"] = u
-
-    meshio.write(vtu_path, meshio.Mesh(points, cell_blocks, point_data=point_data, cell_data=cell_data))
-
-def _collect_electrode_triangles(mesh, facet_tags, id_by_name):
-    """
-    Build triangle connectivity for electrode facets using the cell geometry dofmap
-    (works on dolfinx 0.7.x where geometry.dofmap is a NumPy array).
+    Extract triangle connectivity for surfaces with Dirichlet BCs.
+    
+    Returns:
+        Tuple of (triangles, surface_ids, dirichlet_values) where:
+        - triangles: (N, 3) array of vertex indices
+        - surface_ids: (N,) array of physical surface IDs
+        - dirichlet_values: (N,) array of applied potential values
     """
     tdim = mesh.topology.dim
     fdim = tdim - 1
-
-    # Required connectivities
-    mesh.topology.create_connectivity(fdim, 0)     # facet -> vertices (topology ids)
-    mesh.topology.create_connectivity(fdim, tdim)  # facet -> adjacent cells
-    mesh.topology.create_connectivity(tdim, 0)     # cell  -> vertices (topology ids)
-
+    
+    # Create required connectivity
+    mesh.topology.create_connectivity(fdim, 0)     # facet -> vertices
+    mesh.topology.create_connectivity(fdim, tdim)  # facet -> cells
+    mesh.topology.create_connectivity(tdim, 0)     # cell -> vertices
+    
     f_to_v = mesh.topology.connectivity(fdim, 0)
     f_to_c = mesh.topology.connectivity(fdim, tdim)
     c_to_v = mesh.topology.connectivity(tdim, 0)
-
-    # Map name -> tag id
-    name_to_pid = {}
-    for name, pid in id_by_name.items():
-        ln = name.lower()
-        if ln.startswith("v_"):
-            try:
-                k = int(ln.split("_")[1])
-                if 1 <= k <= 9:
-                    name_to_pid[f"v_{k}"] = pid
-            except Exception:
-                pass
-
-    tris = []
-    ids = []
-
-    for i in range(1, 10):
-        pid = name_to_pid.get(f"v_{i}")
-        if pid is None:
-            continue
-        facets = facet_tags.find(pid)
+    
+    all_tris = []
+    all_surf_ids = []
+    all_values = []
+    
+    for bc_config in dirichlet_list:
+        surf_id = int(bc_config["target"])
+        value = float(bc_config["value"])
+        
+        facets = facet_tags.find(surf_id)
+        
         for f in facets:
-            verts_topo = f_to_v.links(f)              # 3 topology-vertex ids
+            verts_topo = f_to_v.links(f)
             if verts_topo.size != 3:
-                continue
+                continue  # Skip non-triangular facets
+            
+            # Find adjacent cell
             cells = f_to_c.links(f)
             if cells.size == 0:
                 continue
             c = int(cells[0])
-
-            # (A) cell's 4 vertex topology ids (for a tetra)
+            
+            # Get cell vertices (topology IDs)
             cell_verts_topo = c_to_v.links(c)
-
-            # (B) cell's geometry point ids (indices into the VTU "points" array)
-            #     On tetra10, first 4 entries correspond to the 4 vertices.
-            cell_geom_points = np.asarray(mesh.geometry.dofmap)[c]  # <-- 0.7.x access
-            # Build topo-vertex -> point-index map for this cell
-            vmap = {int(tv): int(cell_geom_points[j]) for j, tv in enumerate(cell_verts_topo[:4])}
-
+            
+            # Get geometry point IDs for this cell
+            cell_geom_points = np.asarray(mesh.geometry.dofmap)[c]
+            
+            # Build mapping: topology vertex ID -> geometry point index
+            vmap = {int(tv): int(cell_geom_points[j]) 
+                    for j, tv in enumerate(cell_verts_topo[:4])}
+            
             try:
                 tri = [vmap[int(v)] for v in verts_topo]
             except KeyError:
                 continue
+            
+            all_tris.append(tri)
+            all_surf_ids.append(surf_id)
+            all_values.append(value)
+    
+    if not all_tris:
+        return (np.empty((0, 3), dtype=np.int64), 
+                np.empty((0,), dtype=np.int32),
+                np.empty((0,), dtype=float))
+    
+    return (np.array(all_tris, dtype=np.int64),
+            np.array(all_surf_ids, dtype=np.int32),
+            np.array(all_values, dtype=float))
 
-            tris.append(np.array(tri, dtype=np.int64))
-            ids.append(i)
-
-    if not tris:
-        return []
-    return [(np.vstack(tris), np.asarray(ids, dtype=np.int32))]
+def write_vtu(
+    mesh, solution, region_id, 
+    dirichlet_triangles: Tuple[np.ndarray, np.ndarray, np.ndarray],
+    output_path: Path
+) -> None:
+    """
+    Write solution to VTU format with volume cells and Dirichlet surface triangles.
+    
+    Parameters:
+        mesh: The mesh object.
+        solution: The solution function (u).
+        region_id: The region_id function.
+        dirichlet_triangles: Tuple of (triangles, surface_ids, values) from extract function.
+        output_path: Path to output VTU file.
+    """
+    # Get mesh geometry
+    points = mesh.geometry.x
+    
+    # Get cell topology (assuming tetrahedra)
+    cell_type = mesh.topology.cell_name()
+    if cell_type == "tetrahedron":
+        # For P2 (quadratic) tetrahedral elements, we have 10 nodes per cell
+        topology = np.asarray(mesh.geometry.dofmap)
+        meshio_cell_type = "tetra10" if topology.shape[1] == 10 else "tetra"
+    else:
+        # Fallback for other cell types
+        topology = np.asarray(mesh.geometry.dofmap)
+        meshio_cell_type = cell_type
+    
+    # Build cell blocks
+    cell_blocks = [meshio.CellBlock(meshio_cell_type, topology)]
+    
+    # Cell data (region_id for volume cells)
+    cell_data = {
+        "region_id": [region_id.x.array.astype(np.int32)]
+    }
+    
+    # Add Dirichlet surface triangles if any
+    tris, surf_ids, values = dirichlet_triangles
+    if tris.shape[0] > 0:
+        cell_blocks.append(meshio.CellBlock("triangle", tris))
+        
+        # Align cell_data arrays
+        cell_data["region_id"].append(np.zeros(tris.shape[0], dtype=np.int32))
+        cell_data["surface_id"] = [
+            np.zeros(topology.shape[0], dtype=np.int32),  # dummy for volumes
+            surf_ids
+        ]
+        cell_data["dirichlet_value"] = [
+            np.zeros(topology.shape[0], dtype=float),  # dummy for volumes
+            values
+        ]
+    
+    # Point data (solution values)
+    point_data = {
+        "u": solution.x.array
+    }
+    
+    # Write VTU
+    meshio.write(
+        output_path,
+        meshio.Mesh(points, cell_blocks, point_data=point_data, cell_data=cell_data)
+    )
 
 # --------------------------------------------------------------------------------------
-# Main
+# Main solver routine
 # --------------------------------------------------------------------------------------
+
 def main():
-    t0 = time.perf_counter()
-
-    # Read Gmsh mesh and tags
-    mesh, cell_tags, facet_tags = gmshio.read_from_msh(str(MSH_PATH), COMM, 0)
-
-    id_by_name = read_field_data_ids(MSH_PATH)
+    """Main solver routine driven by manifest configuration."""
+    t_start = time.perf_counter()
+    
+    # Parse arguments
+    args = parse_args()
+    manifest_path = Path(args.manifest).resolve()
+    validate_only = args.validate_only
+    
     if RANK == 0:
-        print("Available Physical names:", sorted(id_by_name.keys()))
-        print(f"[info] SIGMA_GEL={SIGMA_GEL} (default {SIGMA_GEL_DEFAULT}), "
-              f"SIGMA_HEAD={SIGMA_HEAD} (default {SIGMA_HEAD_DEFAULT})")
-
-    id_head = id_by_name.get("head")
-    id_gel  = id_by_name.get("gel")
-
-    # Mesh region stats
+        print("=" * 80)
+        print("FEM Electrostatics Solver")
+        print("=" * 80)
+        print(f"Manifest: {manifest_path}")
+        print(f"Mode: {'VALIDATE ONLY' if validate_only else 'SOLVE'}")
+        print()
+    
+    # Load and validate manifest
+    manifest = load_manifest(manifest_path)
+    validate_manifest_schema(manifest)
+    
     if RANK == 0:
-        n_head = cell_tags.find(id_head).size if id_head is not None else 0
-        n_gel  = cell_tags.find(id_gel).size  if id_gel  is not None else 0
-        print(f"[mesh] cells: gel={n_gel}, head={n_head}")
-
-    cases = load_cases(CASES_CSV)
+        print(f"Loaded manifest with {len(manifest['cases'])} case(s)")
+        print()
+    
+    # Resolve paths relative to manifest directory
+    manifest_dir = manifest_path.parent
+    mesh_path = (manifest_dir / manifest["mesh"]).resolve()
+    
+    # Handle outputs - support both string and dict formats
+    if isinstance(manifest["outputs"], dict):
+        output_dir = (manifest_dir / manifest["outputs"]["out_dir"]).resolve()
+    else:
+        output_dir = (manifest_dir / manifest["outputs"]).resolve()
+    
+    # Setup cache directories EARLY (before any FEM operations)
+    cache_base = output_dir / ".cache"
     if RANK == 0:
-        print(f"[info] Simulation cases: {len(cases)}")
-
-    for case_name, pots in cases:
+        cache_base.mkdir(parents=True, exist_ok=True)
+    os.environ["DOLFINX_JIT_CACHE_DIR"] = str(cache_base / "dolfinx")
+    os.environ["FFCX_CACHE_DIR"] = str(cache_base / "ffcx")
+    os.environ["XDG_CACHE_HOME"] = str(cache_base / "xdg")
+    Path(os.environ["DOLFINX_JIT_CACHE_DIR"]).mkdir(parents=True, exist_ok=True)
+    Path(os.environ["FFCX_CACHE_DIR"]).mkdir(parents=True, exist_ok=True)
+    Path(os.environ["XDG_CACHE_HOME"]).mkdir(parents=True, exist_ok=True)
+    
+    if RANK == 0:
+        print(f"Mesh path: {mesh_path}")
+        print(f"Output directory: {output_dir}")
+        print()
+    
+    # Check mesh file exists
+    if not mesh_path.exists():
         if RANK == 0:
-            pretty = ", ".join(f"{k}={pots[k]:.6g}" for k in sorted(pots.keys()))
-            print(f"\n[case] {case_name}: {pretty}")
-
+            print(f"ERROR: Mesh file not found: {mesh_path}")
+        sys.exit(EXIT_VALIDATION_ERROR)
+    
+    # Create output directory
+    if RANK == 0:
+        output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Read mesh
+    if RANK == 0:
+        print("Reading mesh...")
+    mesh, cell_tags, facet_tags = gmshio.read_from_msh(str(mesh_path), COMM, 0)
+    
+    # Get physical ID mappings
+    name_to_id, id_to_name = get_physical_ids_from_mesh(mesh_path)
+    
+    if RANK == 0:
+        print(f"Mesh loaded: {mesh.topology.index_map(mesh.topology.dim).size_global} cells")
+        print(f"Physical groups: {len(name_to_id)}")
+        print()
+    
+    # Validate mesh against manifest
+    if RANK == 0:
+        print("Validating mesh against manifest...")
+        print("-" * 80)
+    validate_mesh_against_manifest(mesh, cell_tags, facet_tags, manifest, id_to_name)
+    if RANK == 0:
+        print("-" * 80)
+        print()
+    
+    # If validate-only mode, exit here
+    if validate_only:
+        if RANK == 0:
+            print("Validation complete. Exiting (--validate-only mode).")
+            print(f"Total time: {time.perf_counter() - t_start:.2f} s")
+        sys.exit(EXIT_SUCCESS)
+    
+    # Build conductivity and region_id functions (shared across cases)
+    if RANK == 0:
+        print("Building conductivity distribution...")
+    sigma = build_sigma_from_manifest(mesh, cell_tags, manifest["volumes"])
+    region_id = build_region_id_from_manifest(mesh, cell_tags, manifest["volumes"])
+    
+    if RANK == 0:
+        print("Conductivity values:")
+        for vol_id_str, vol_config in manifest["volumes"].items():
+            vol_name = vol_config.get("name", "<unnamed>")
+            sigma_val = vol_config["sigma"]
+            print(f"  - Volume '{vol_name}' (ID: {vol_id_str}): σ = {sigma_val}")
+        print()
+    
+    # Create function space (shared across cases)
+    V = fem.functionspace(mesh, ("Lagrange", 2))
+    if RANK == 0:
+        print(f"Function space: Lagrange P2, {V.dofmap.index_map.size_global} DOFs")
+        print()
+    
+    # Solve each case
+    for case_idx, case_config in enumerate(manifest["cases"], 1):
+        case_name = case_config["case_name"]
+        dirichlet_list = case_config["dirichlet"]
+        
+        if RANK == 0:
+            print("=" * 80)
+            print(f"Case {case_idx}/{len(manifest['cases'])}: {case_name}")
+            print("=" * 80)
+        
         t_case = time.perf_counter()
-
-        V = fem.functionspace(mesh, ("Lagrange", 2))
-        sigma = build_sigma(mesh, cell_tags, id_head, SIGMA_GEL, SIGMA_HEAD)
-        region_id = make_region_id(mesh, cell_tags, id_head, id_gel)
-
-        bcs = dirichlet_from_electrodes(V, facet_tags, id_by_name, pots)
-
+        
+        # Build Dirichlet BCs
+        bcs = build_dirichlet_bcs_from_manifest(V, facet_tags, dirichlet_list)
+        
         if RANK == 0:
-            print("[bc] Applied Dirichlet patches:")
-            name_to_id = {name.lower(): pid for name, pid in id_by_name.items() if name.lower().startswith("v_")}
-            for i in range(1, 10):
-                en = f"v_{i}"
-                pid = name_to_id.get(en)
-                nfac = facet_tags.find(pid).size if pid is not None else 0
-                val = float(pots.get(en, 0.0))
-                print(f"  - {en:<3}: {val:.6g} V  ({nfac} facets)")
-
-        # Skip only pure Neumann (no Dirichlet BCs)
+            print(f"Dirichlet boundary conditions ({len(dirichlet_list)}):")
+            for bc_config in dirichlet_list:
+                surf_id = bc_config["target"]
+                value = bc_config["value"]
+                surf_name = id_to_name.get(surf_id, "<unnamed>")
+                n_facets = facet_tags.find(surf_id).size
+                print(f"  - Surface '{surf_name}' (ID: {surf_id}): u = {value} V ({n_facets} facets)")
+            print()
+        
+        # Check that we have at least one BC (already checked in validation, but double-check)
         if len(bcs) == 0:
             if RANK == 0:
-                print("[skip] No electrode facets found → pure Neumann (no gauge). Skipping case.")
-            continue
-
-        # Weak form and solver
+                print("ERROR: No valid Dirichlet BCs applied (all surfaces missing from mesh).")
+            sys.exit(EXIT_VALIDATION_ERROR)
+        
+        # Define weak form
+        if RANK == 0:
+            print("Assembling and solving linear system...")
         u = ufl.TrialFunction(V)
         v = ufl.TestFunction(V)
         a = ufl.inner(sigma * ufl.grad(u), ufl.grad(v)) * ufl.dx
         L = fem.Constant(mesh, PETSc.ScalarType(0.0)) * v * ufl.dx
-
-        problem = LinearProblem(a, L, bcs=bcs,
-                                petsc_options={"ksp_type": "cg", "pc_type": "gamg", "ksp_rtol": 1e-10})
-        uh = problem.solve()
-        uh.name = "u"
-
-        # Write XDMF/H5 + convert to VTU
-        xdmf_path = OUT_DIR / f"solution_{case_name}.xdmf"
+        
+        # Solve
+        try:
+            problem = LinearProblem(
+                a, L, bcs=bcs,
+                petsc_options={"ksp_type": "cg", "pc_type": "gamg", "ksp_rtol": 1e-10}
+            )
+            uh = problem.solve()
+            uh.name = "u"
+        except Exception as e:
+            if RANK == 0:
+                print(f"ERROR: Solver failed: {e}")
+            sys.exit(EXIT_SOLVER_ERROR)
+        
         if RANK == 0:
-            print(f"[write] {xdmf_path.name} (+ .h5)")
-        with XDMFFile(COMM, str(xdmf_path), "w") as xdmf:
-            xdmf.write_mesh(mesh)
-            xdmf.write_function(uh)
-            xdmf.write_function(region_id)
-
+            print("Solve complete.")
+            print()
+        
+        # Extract Dirichlet surface triangles for visualization
+        dirichlet_surfaces = extract_dirichlet_surface_triangles(mesh, facet_tags, dirichlet_list)
+        
+        # Write VTU output (only on rank 0)
         if RANK == 0:
-            h5_path = xdmf_path.with_suffix(".h5")
-            vtu_path = xdmf_path.with_suffix(".vtu")
-            electrodes = _collect_electrode_triangles(mesh, facet_tags, id_by_name)
-            print(f"[write] {vtu_path.name} (tetra10 + {'electrodes' if electrodes else 'no electrodes'})")
-            _write_vtu_from_h5(h5_path, vtu_path, electrodes)
-
-        if RANK == 0:
-            print(f"[time] {case_name}: {time.perf_counter() - t_case:.2f} s")
-
+            output_file = output_dir / f"{case_name}.vtu"
+            print(f"Writing output: {output_file.name}")
+            write_vtu(mesh, uh, region_id, dirichlet_surfaces, output_file)
+            print(f"Case time: {time.perf_counter() - t_case:.2f} s")
+            print()
+    
     if RANK == 0:
-        print(f"\n[time] total: {time.perf_counter() - t0:.2f} s")
+        print("=" * 80)
+        print(f"All cases complete. Total time: {time.perf_counter() - t_start:.2f} s")
+        print("=" * 80)
+    
+    sys.exit(EXIT_SUCCESS)
 
 
 if __name__ == "__main__":
-    os.environ.setdefault("DOLFINX_JIT_CACHE_DIR", str(RUN_DIR / "__dolfinx_cache__"))
-    os.environ.setdefault("FFCX_CACHE_DIR",        str(RUN_DIR / "__ffcx_cache__"))
-    os.environ.setdefault("XDG_CACHE_HOME",        str(RUN_DIR / "__cache__"))
-    os.environ.setdefault("FFCX_REGENERATE",       "1")
-    Path(os.environ["DOLFINX_JIT_CACHE_DIR"]).mkdir(parents=True, exist_ok=True)
-    Path(os.environ["FFCX_CACHE_DIR"]).mkdir(parents=True, exist_ok=True)
-    Path(os.environ["XDG_CACHE_HOME"]).mkdir(parents=True, exist_ok=True)
-
     main()

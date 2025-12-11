@@ -1,0 +1,18 @@
+{
+  "mesh": "./mesh.msh",
+  "outputs": "./cases",
+  "volumes": {
+    "1": { "sigma": 0.33, "name": "gel" },
+    "2": { "sigma": 4.1,  "name": "head" }
+  },
+  "cases": [
+    {
+      "case_name": "static_example",
+      "dirichlet": [
+        { "target": 11, "value": 0.3 },
+        { "target": 12, "value": 1.0 },
+        { "target": 13, "value": 0.0 }
+      ]
+    }
+  ]
+}
