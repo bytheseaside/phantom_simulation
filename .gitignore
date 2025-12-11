@@ -10,8 +10,7 @@ screenshots/
 results/
 
 # Python cache
-__pycache__
-__pycache__/*
+__**
 *.pyc
 *.pyo
 *.pyd
