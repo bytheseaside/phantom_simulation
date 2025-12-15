@@ -96,9 +96,9 @@ def build_dirichlet_bcs(
     return bcs
 
 # --------------------------------------------------------------------------------------
-# XDMF output
+# Output
 # --------------------------------------------------------------------------------------
-def write_xdmf_output(
+def write_output_files(
     *,
     mesh,
     cell_tags,
@@ -107,20 +107,20 @@ def write_xdmf_output(
     output_path: Path,
 ) -> None:
     """
-    Write solution and mesh data to XDMF format.
-    
+    Write a complete solution output to XDMF/H5 and VTU.
+
     Parameters
     ----------
     mesh : dolfinx.mesh.Mesh
         The mesh
+    u : dolfinx.fem.Function
+        Solution function (e.g., potential `u`)
     cell_tags : dolfinx.mesh.MeshTags
-        Physical volume tags (region IDs)
+        Physical volume tags
     facet_tags : dolfinx.mesh.MeshTags
-        Physical surface tags (including Dirichlet surfaces)
-    u : fem.Function
-        Solution function
+        Physical surface tags
     output_path : Path
-        Path to output XDMF file (e.g., "case_name.xdmf")
+        Path to the output .xdmf file (e.g., output_dir / f"{case_name}.xdmf")
     """
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -130,7 +130,6 @@ def write_xdmf_output(
         xdmf.write_function(u)
         xdmf.write_meshtags(cell_tags, mesh.geometry)
         xdmf.write_meshtags(facet_tags, mesh.geometry)
-
 
 # --------------------------------------------------------------------------------------
 # Main solver routine
@@ -257,10 +256,10 @@ def main():
         print("Solve complete.")
         print()
         
-        # Write XDMF output
+        # Write output
         output_file = output_dir / f"{case.name}.xdmf"
         print(f"Writing output: {output_file.name}")
-        write_xdmf_output(
+        write_output_files(
             mesh=mesh,
             cell_tags=cell_tags,
             facet_tags=facet_tags,
