@@ -1,0 +1,514 @@
+{
+  "mesh": "./mesh.msh",
+  "output": "./cases",
+  "volumes": [
+    { "sigma": 4.1, "name": "head" },
+    { "sigma": 0.33, "name": "gel" }
+  ],
+  "cases": [
+    {
+      "name": "D_e1e2",
+      "dirichlet": [
+        { "name": "v_1", "value": 1.0 },
+        { "name": "v_2", "value": -1.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e1e3",
+      "dirichlet": [
+        { "name": "v_1", "value": 1.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": -1.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e1e4",
+      "dirichlet": [
+        { "name": "v_1", "value": 1.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": -1.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e1e5",
+      "dirichlet": [
+        { "name": "v_1", "value": 1.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": -1.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e1e6",
+      "dirichlet": [
+        { "name": "v_1", "value": 1.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": -1.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e1e7",
+      "dirichlet": [
+        { "name": "v_1", "value": 1.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": -1.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e1e8",
+      "dirichlet": [
+        { "name": "v_1", "value": 1.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": -1.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e1e9",
+      "dirichlet": [
+        { "name": "v_1", "value": 1.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": -1.0 }
+      ]
+    },
+    {
+      "name": "D_e2e3",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 1.0 },
+        { "name": "v_3", "value": -1.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e2e4",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 1.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": -1.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e2e5",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 1.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": -1.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e2e6",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 1.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": -1.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e2e7",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 1.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": -1.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e2e8",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 1.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": -1.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e2e9",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 1.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": -1.0 }
+      ]
+    },
+    {
+      "name": "D_e3e4",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 1.0 },
+        { "name": "v_4", "value": -1.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e3e5",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 1.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": -1.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e3e6",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 1.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": -1.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e3e7",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 1.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": -1.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e3e8",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 1.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": -1.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e3e9",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 1.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": -1.0 }
+      ]
+    },
+    {
+      "name": "D_e4e5",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 1.0 },
+        { "name": "v_5", "value": -1.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e4e6",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 1.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": -1.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e4e7",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 1.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": -1.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e4e8",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 1.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": -1.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e4e9",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 1.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": -1.0 }
+      ]
+    },
+    {
+      "name": "D_e5e6",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 1.0 },
+        { "name": "v_6", "value": -1.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e5e7",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 1.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": -1.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e5e8",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 1.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": -1.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e5e9",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 1.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": -1.0 }
+      ]
+    },
+    {
+      "name": "D_e6e7",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": 1.0 },
+        { "name": "v_7", "value": -1.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e6e8",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": 1.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": -1.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e6e9",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": 1.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": -1.0 }
+      ]
+    },
+    {
+      "name": "D_e7e8",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": 1.0 },
+        { "name": "v_8", "value": -1.0 },
+        { "name": "v_9", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "D_e7e9",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": 1.0 },
+        { "name": "v_8", "value": 0.0 },
+        { "name": "v_9", "value": -1.0 }
+      ]
+    },
+    {
+      "name": "D_e8e9",
+      "dirichlet": [
+        { "name": "v_1", "value": 0.0 },
+        { "name": "v_2", "value": 0.0 },
+        { "name": "v_3", "value": 0.0 },
+        { "name": "v_4", "value": 0.0 },
+        { "name": "v_5", "value": 0.0 },
+        { "name": "v_6", "value": 0.0 },
+        { "name": "v_7", "value": 0.0 },
+        { "name": "v_8", "value": 1.0 },
+        { "name": "v_9", "value": -1.0 }
+      ]
+    }
+  ]
+}
