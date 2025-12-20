@@ -33,18 +33,24 @@ If (doHeal)
   Geometry.OCCMakeSolids         = 1;
 EndIf
 
+vs_pre[] = Volume{:};
+num_volumes = #vs_pre[];
+
 // ---------- optional coherence ----------
-If (doCoherence)
+If (doCoherence && num_volumes > 1)
   Printf(">> Coherence (deduplicate)...");
   Coherence;
+ElseIf (doCoherence && num_volumes == 1)
+  Printf(">> Single volume - skipping Coherence.");
 EndIf
 
 // ---------- conformal split ----------
-If (doFragment)
+If (doFragment && num_volumes > 1)
   Printf(">> BooleanFragments (conformal split, delete inputs)...");
   // Fragment everything with everything, remove originals
   vol_new() = BooleanFragments{ Volume{:}; Delete; }{};
-  Coherence;
+ElseIf (doFragment && num_volumes == 1)
+  Printf(">> Single volume - skipping BooleanFragments.");
 EndIf
 
 // ---------- report ----------
@@ -57,5 +63,5 @@ If (#vs[] == 0)
 EndIf
 
 // ---------- save frozen geometry (XAO + stub GEO) ----------
-Printf(">> Saving frozen geometry: prep.geo_unrolled (+ .xao) ...");
-Save "prep.geo_unrolled";
+Printf(">> Saving frozen geometry...");
+Save StrCat(GetEnv("OUT_PATH"));

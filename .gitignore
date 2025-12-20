@@ -1,7 +1,7 @@
 run*/cases
-run*/run_steps
 run*/*_F
 *.step
+**/*.xao
 *.msh
 screenshots/
 *.code-workspace

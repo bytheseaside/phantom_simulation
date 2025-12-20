@@ -1,75 +1,56 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Usage: ./run_step_01.sh <path_to_step_file>
-if [ $# -lt 1 ]; then
-  echo "✗ Error: Missing STEP file path argument"
-  echo "Usage: $0 <path_to_step_file>"
+# Usage: ./run_step_01.sh --step <path_to_step_file> --out <path_to_output.xao>
+STEP_FILE=""
+OUT_FILE=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --step)
+      STEP_FILE="$2"
+      shift 2
+      ;;
+    --out)
+      OUT_FILE="$2"
+      shift 2
+      ;;
+    *)
+      echo "✗ Unknown option: $1"
+      echo "Usage: $0 --step <path_to_step_file> --out <path_to_output.xao>"
+      exit 1
+      ;;
+  esac
+done
+
+# Validate arguments
+if [ -z "$STEP_FILE" ] || [ -z "$OUT_FILE" ]; then
+  echo "✗ Error: Both --step and --out arguments required"
+  echo "Usage: $0 --step <path_to_step_file> --out <path_to_output.xao>"
   exit 1
 fi
 
-STEP_FILE="$1"
-
-# Check if file exists
+# Validate STEP file exists and has .step extension
 if [ ! -f "$STEP_FILE" ]; then
-  echo "✗ Error: File does not exist: $STEP_FILE"
+  echo "✗ Error: STEP file does not exist: $STEP_FILE"
   exit 1
 fi
 
-# Check if file has .step extension
 if [[ "$STEP_FILE" != *.step ]]; then
   echo "✗ Error: File must have .step extension: $STEP_FILE"
   exit 1
 fi
 
-# Convert to absolute path
-STEP_FILE="$(cd "$(dirname "$STEP_FILE")" && pwd)/$(basename "$STEP_FILE")"
+# Convert to absolute paths
+STEP_FILE="$(realpath "$STEP_FILE")"
 
-TS="$(date +"%Y%m%d_%H%M%S")"
-RUN_DIR="run_${TS}"
-RUN_STEPS_DIR="$RUN_DIR/run_steps"
-mkdir -p "$RUN_STEPS_DIR"
-echo ">> Working dir: $RUN_DIR"
+# Ensure output directory exists and convert OUT_FILE to absolute path
+OUT_DIR="$(dirname "$OUT_FILE")"
+mkdir -p "$OUT_DIR"
+OUT_FILE="$(realpath "$OUT_DIR")/$(basename "$OUT_FILE")"
 
-#  So the script can be run from anywhere
-if [ -n "${BASH_SOURCE:-}" ]; then
-  SCRIPT_PATH="${BASH_SOURCE[0]}"
-else
-  SCRIPT_PATH="$0"
-fi
-SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+# Get script directory
+SCRIPT_DIR="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
 
-
-# Copy the frozen-IDs geo file from the script directory into the run_steps dir
-cp "$SCRIPT_DIR/01_prep_freeze_ids.geo" "$RUN_STEPS_DIR"/
-cd "$RUN_STEPS_DIR"
-
-
-LOG="step1.log"
-echo ">> Running Gmsh (prep model). Log: $LOG"
-echo ">> Using STEP file: $STEP_FILE"
-
-if ! STEP_FILE="$STEP_FILE" gmsh -v 5 -0 01_prep_freeze_ids.geo &> "$LOG"; then
-  echo "✗ Error. See $RUN_STEPS_DIR/$LOG"
-  exit 1
-fi
-
-# Gmsh may auto-save an unrolled of the input .geo; remove it to keep only our frozen artifacts
-rm -f "01_prep_freeze_ids.geo" 2>/dev/null || true
-rm -f "01_prep_freeze_ids.geo_unrolled.xao" 2>/dev/null || true
-
-
-# Check artifacts: we only expect .geo_unrolled (+ .xao alongside)
-if [ -f "prep.geo_unrolled" ] && [ -f "prep.geo_unrolled.xao" ]; then
-  echo "✓ Prep OK. Artifacts:"
-  echo "   - $RUN_STEPS_DIR/prep.geo_unrolled"
-  echo "   - $RUN_STEPS_DIR/prep.geo_unrolled.xao"
-  echo "   - $RUN_STEPS_DIR/$LOG"
-
-  # Print instructions to check IDs
-  echo "To check the IDs of the entities for STEP 2, run the following commands:"
-  echo "cd $RUN_STEPS_DIR ; gmsh prep.geo_unrolled.xao"
-else
-  echo "✗ Frozen artifacts missing. Check $RUN_STEPS_DIR/$LOG"
-  exit 1
-fi
+echo ">> Running gmsh prep (freeze IDs)..."
+STEP_FILE="$STEP_FILE" OUT_PATH="$OUT_FILE" gmsh -v 4 - "$SCRIPT_DIR/01_prep_freeze_ids.geo"
