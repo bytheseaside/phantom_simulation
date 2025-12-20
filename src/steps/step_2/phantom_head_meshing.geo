@@ -6,7 +6,7 @@ SetFactory("OpenCASCADE");
 General.Terminal = 1;
 
 // 0) Load frozen geometry from Step-1
-Merge // TODO: path here...;
+Merge StrCat(GetEnv("XAO_PATH"));
 vi[] = Volume{:}; si[] = Surface{:};
 Printf(">> Loaded geometry: Volumes=%g, Surfaces=%g", #vi[], #si[]);
 
@@ -105,5 +105,5 @@ Physical Surface("e9", 19) = { e9_surfaces[] };
 // 6) Mesh + save
 Mesh 3;
 Mesh.MshFileVersion = 4.1;
-Save // TODO: output path here...;
+Save StrCat(GetEnv("OUT_PATH"));
 Printf(">> Mesh written");

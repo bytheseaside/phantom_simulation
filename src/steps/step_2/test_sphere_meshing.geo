@@ -8,7 +8,7 @@ SetFactory("OpenCASCADE");
 General.Terminal = 1;
 
 // 0) Load frozen geometry from Step-1, from the XAO_PATH environment variable
-Merge "/Users/brisarojas/Desktop/phantom_simulation/run_20251220_192154/run_steps/prep.geo_unrolled.xao";
+Merge StrCat(GetEnv("XAO_PATH"));
 vi[] = Volume{:}; si[] = Surface{:};
 Printf(">> Loaded geometry: Volumes=%g, Surfaces=%g", #vi[], #si[]);
 
@@ -55,5 +55,5 @@ Physical Surface("r_ext", 3) = { external_surfaces[] };
 // 6) Mesh + save
 Mesh 3;
 Mesh.MshFileVersion = 4.1;
-Save "/Users/brisarojas/Desktop/phantom_simulation/run_20251220_192154/run_steps/test_sphere_mesh.msh";
+Save StrCat(GetEnv("OUT_PATH"));
 Printf(">> Mesh written");
