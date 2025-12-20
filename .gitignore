@@ -1,13 +1,10 @@
 run*/cases
 run*/*_F
-*.step
-**/*.xao
-*.msh
+**.step
+**.xao
+**.msh
 screenshots/
 *.code-workspace
-
-# Algorithm results
-results/
 
 # Python cache
 __**

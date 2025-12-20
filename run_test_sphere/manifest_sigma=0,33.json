@@ -1,0 +1,119 @@
+{
+  "mesh": "./mesh.msh",
+  "output": "./cases",
+  "volumes": [
+    { "sigma": 0.33, "name": "sphere" }
+  ],
+  "cases": [
+    {
+        "name": "int_1V",
+        "dirichlet": [{ "name": "r_int", "value": 1 }]
+    },
+    {
+        "name": "int_2V",
+        "dirichlet": [{ "name": "r_int", "value": 2 }]
+    },
+    {
+        "name": "int_3V",
+        "dirichlet": [{ "name": "r_int", "value": 3 }]
+    },
+    {
+        "name": "int_5V",
+        "dirichlet": [{ "name": "r_int", "value": 5 }]
+    },
+    {
+        "name": "int_10V",
+        "dirichlet": [{ "name": "r_int", "value": 10 }]
+    },
+    {
+        "name": "int_0.5V",
+        "dirichlet": [{ "name": "r_int", "value": 0.5 }]
+    },
+    {
+        "name": "int_1.5V",
+        "dirichlet": [{ "name": "r_int", "value": 1.5 }]
+    },
+    {
+        "name": "int_2.5V",
+        "dirichlet": [{ "name": "r_int", "value": 2.5 }]
+    },
+    {
+        "name": "int_4V",
+        "dirichlet": [{ "name": "r_int", "value": 4 }]
+    },
+    {
+        "name": "int_7V",
+        "dirichlet": [{ "name": "r_int", "value": 7 }]
+    },
+    {
+        "name": "int_1V_ext_0V",
+        "dirichlet": [
+            { "name": "r_int", "value": 1 },
+            { "name": "r_ext", "value": 0 }
+        ]
+    },
+    {
+        "name": "int_2V_ext_0V",
+        "dirichlet": [
+            { "name": "r_int", "value": 2 },
+            { "name": "r_ext", "value": 0 }
+        ]
+    },
+    {
+        "name": "int_3V_ext_1V",
+        "dirichlet": [
+            { "name": "r_int", "value": 3 },
+            { "name": "r_ext", "value": 1 }
+        ]
+    },
+    {
+        "name": "int_5V_ext_2V",
+        "dirichlet": [
+            { "name": "r_int", "value": 5 },
+            { "name": "r_ext", "value": 2 }
+        ]
+    },
+    {
+        "name": "int_10V_ext_5V",
+        "dirichlet": [
+            { "name": "r_int", "value": 10 },
+            { "name": "r_ext", "value": 5 }
+        ]
+    },
+    {
+        "name": "int_1.5V_ext_0.5V",
+        "dirichlet": [
+            { "name": "r_int", "value": 1.5 },
+            { "name": "r_ext", "value": 0.5 }
+        ]
+    },
+    {
+        "name": "int_2.5V_ext_1V",
+        "dirichlet": [
+            { "name": "r_int", "value": 2.5 },
+            { "name": "r_ext", "value": 1 }
+        ]
+    },
+    {
+        "name": "int_4V_ext_2V",
+        "dirichlet": [
+            { "name": "r_int", "value": 4 },
+            { "name": "r_ext", "value": 2 }
+        ]
+    },
+    {
+        "name": "int_7V_ext_3V",
+        "dirichlet": [
+            { "name": "r_int", "value": 7 },
+            { "name": "r_ext", "value": 3 }
+        ]
+    },
+    {
+        "name": "int_8V_ext_4V",
+        "dirichlet": [
+            { "name": "r_int", "value": 8 },
+            { "name": "r_ext", "value": 4 }
+        ]
+    }
+  ]
+}
