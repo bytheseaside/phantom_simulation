@@ -27,6 +27,19 @@ export LDSHARED="$CC -bundle -undefined dynamic_lookup $ARCHFLAGS"
 # Optional: see compile/link lines if something fails
 export FFCX_JIT_LOG_LEVEL=DEBUG
 
+# Validate manifest file argument
+if [ $# -eq 0 ]; then
+  echo "✗ Error: No manifest file provided"
+  echo "Usage: $0 <manifest.json> [--validate-only]"
+  exit 1
+fi
+
+MANIFEST_FILE="$1"
+if [ ! -f "$MANIFEST_FILE" ]; then
+  echo "✗ Error: Manifest file does not exist: $MANIFEST_FILE"
+  exit 1
+fi
+
 # Run solver.py with all arguments passed through
 SOLVER_SCRIPT="$(dirname "${BASH_SOURCE[0]}")/solver.py"
 

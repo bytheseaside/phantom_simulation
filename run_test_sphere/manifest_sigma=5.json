@@ -1,6 +1,6 @@
 {
   "mesh": "./mesh.msh",
-  "output": "./cases",
+  "output": "./cases_sigma_5",
   "volumes": [
     { "sigma": 5, "name": "sphere" }
   ],
