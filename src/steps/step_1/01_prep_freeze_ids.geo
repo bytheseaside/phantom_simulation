@@ -17,7 +17,7 @@ doFragment  = 1;  // 1 = conformal split (BooleanFragments)
 
 // ---------- import ----------
 Printf(">> Importing STEP...");
-Merge "../../simulation_assembly.step";
+Merge StrCat(GetEnv("STEP_FILE"));
 
 // ---------- scale mm -> m ----------
 Printf(">> Scaling mm -> m...");
