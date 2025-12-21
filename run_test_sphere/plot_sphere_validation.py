@@ -107,10 +107,18 @@ def load_sampled_csv(csv_path: Path) -> tuple[np.ndarray, np.ndarray]:
 
 
 def case_title(meta: CaseMeta) -> str:
-    # You asked: only write NEUMANN when needed, otherwise numeric ext
     if meta.ext_is_neumann:
-        return f"σ={meta.sigma:g}, int={meta.u_int:g} [V], ext=NEUMANN"
-    return f"σ={meta.sigma:g}, int={meta.u_int:g} [V], ext={meta.u_ext:g} [V]"
+        return (
+            rf"$\sigma={meta.sigma:g}\,\mathrm{{S/m}},\ "
+            rf"u(r_{{\mathrm{{int}}}})={meta.u_int:g}\,\mathrm{{V}},\ "
+            rf"\partial u/\partial n(r_{{\mathrm{{ext}}}})=0$"
+        )
+    else:
+        return (
+            rf"$\sigma={meta.sigma:g}\,\mathrm{{S/m}},\ "
+            rf"u(r_{{\mathrm{{int}}}})={meta.u_int:g}\,\mathrm{{V}},\ "
+            rf"u(r_{{\mathrm{{ext}}}})={meta.u_ext:g}\,\mathrm{{V}}$"
+        )
 
 
 def main(cases: List[str], out: str) -> None:
@@ -127,8 +135,13 @@ def main(cases: List[str], out: str) -> None:
     ncols = 2
     nrows = (n + ncols - 1) // ncols
 
-    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, squeeze=False)
-    fig.suptitle("Spherical shell validation: FEM samples vs analytic solution", fontsize=14)
+    fig, axes = plt.subplots(
+        nrows=nrows,
+        ncols=ncols,
+        figsize=(14, 8), 
+        squeeze=False
+    )
+    fig.suptitle("Spherical mesh: FEM samples vs analytic solution", fontsize=14)
 
     for i, (p, meta) in enumerate(zip(case_paths, metas)):
         ax = axes[i // ncols][i % ncols]
@@ -148,11 +161,29 @@ def main(cases: List[str], out: str) -> None:
         # Analytic: thicker line behind
         ax.plot(r, u_th, linewidth=3, alpha=0.6, label="Analytic")
 
-        ax.set_title(case_title(meta), fontsize=10)
+        ax.set_title(case_title(meta), fontsize=11)
         ax.set_xlabel("r [m]")
         ax.set_ylabel("u(r) [V]")
         ax.grid(True)
-        ax.legend(fontsize=8)
+        # --- Y padding for readability ---
+        y_all = np.concatenate([
+            u_meas[np.isfinite(u_meas)],
+            u_th[np.isfinite(u_th)]
+        ])
+
+        if y_all.size > 0:
+            y_min = y_all.min()
+            y_max = y_all.max()
+
+            # Relative padding (10% of range, fallback if flat)
+            span = y_max - y_min
+            if span == 0:
+                pad = 0.05 * max(abs(y_max), 1.0)
+            else:
+                pad = 0.10 * span
+
+            ax.set_ylim(y_min - pad, y_max + pad)
+
 
     # Hide any unused subplots if odd number of cases
     for j in range(n, nrows * ncols):
@@ -161,8 +192,20 @@ def main(cases: List[str], out: str) -> None:
     out_path = Path(out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # leave space for the suptitle
-    fig.tight_layout(rect=[0, 0, 1, 0.95])
+    fig.tight_layout(rect=[0, 0, 1, 0.9])
+    fig.subplots_adjust(wspace=0.15)
+    handles, labels = axes[0][0].get_legend_handles_labels()
+
+    fig.legend(
+        handles,
+        labels,
+        loc="upper center",
+        ncol=2,
+        frameon=True,
+        fontsize=10,
+        bbox_to_anchor=(0.5, 0.93)
+    )
+
     fig.savefig(out_path, dpi=300)
     print(f"[OK] wrote {out_path}")
 
