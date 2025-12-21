@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 
 # -------------------------
-# USER CONSTANTS (CONFIRMED)
+# CONSTANTS
 # -------------------------
 R_INNER = 0.001  # m (1 mm)
 R_OUTER = 0.005  # m (5 mm)
