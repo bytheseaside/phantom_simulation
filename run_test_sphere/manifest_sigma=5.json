@@ -6,113 +6,113 @@
   ],
   "cases": [
     {
-        "name": "int_1V",
-        "dirichlet": [{ "name": "r_int", "value": 1 }]
+        "name": "sigma=5-int=3,73-ext=neumann",
+        "dirichlet": [{ "name": "r_int", "value": 3.73 }]
     },
     {
-        "name": "int_2V",
-        "dirichlet": [{ "name": "r_int", "value": 2 }]
+        "name": "sigma=5-int=6,99-ext=neumann",
+        "dirichlet": [{ "name": "r_int", "value": 6.99 }]
     },
     {
-        "name": "int_3V",
-        "dirichlet": [{ "name": "r_int", "value": 3 }]
+        "name": "sigma=5-int=2,41-ext=neumann",
+        "dirichlet": [{ "name": "r_int", "value": 2.41 }]
     },
     {
-        "name": "int_5V",
-        "dirichlet": [{ "name": "r_int", "value": 5 }]
+        "name": "sigma=5-int=8,12-ext=neumann",
+        "dirichlet": [{ "name": "r_int", "value": 8.12 }]
     },
     {
-        "name": "int_10V",
-        "dirichlet": [{ "name": "r_int", "value": 10 }]
+        "name": "sigma=5-int=5,67-ext=neumann",
+        "dirichlet": [{ "name": "r_int", "value": 5.67 }]
     },
     {
-        "name": "int_0.5V",
-        "dirichlet": [{ "name": "r_int", "value": 0.5 }]
+        "name": "sigma=5-int=1,23-ext=neumann",
+        "dirichlet": [{ "name": "r_int", "value": 1.23 }]
     },
     {
-        "name": "int_1.5V",
-        "dirichlet": [{ "name": "r_int", "value": 1.5 }]
+        "name": "sigma=5-int=4,56-ext=neumann",
+        "dirichlet": [{ "name": "r_int", "value": 4.56 }]
     },
     {
-        "name": "int_2.5V",
-        "dirichlet": [{ "name": "r_int", "value": 2.5 }]
+        "name": "sigma=5-int=7,88-ext=neumann",
+        "dirichlet": [{ "name": "r_int", "value": 7.88 }]
     },
     {
-        "name": "int_4V",
-        "dirichlet": [{ "name": "r_int", "value": 4 }]
+        "name": "sigma=5-int=9,34-ext=neumann",
+        "dirichlet": [{ "name": "r_int", "value": 9.34 }]
     },
     {
-        "name": "int_7V",
-        "dirichlet": [{ "name": "r_int", "value": 7 }]
+        "name": "sigma=5-int=2,77-ext=neumann",
+        "dirichlet": [{ "name": "r_int", "value": 2.77 }]
     },
     {
-        "name": "int_1V_ext_0V",
+        "name": "sigma=5-int=3,73-ext=0,44",
         "dirichlet": [
-            { "name": "r_int", "value": 1 },
-            { "name": "r_ext", "value": 0 }
+            { "name": "r_int", "value": 3.73 },
+            { "name": "r_ext", "value": 0.44 }
         ]
     },
     {
-        "name": "int_2V_ext_0V",
+        "name": "sigma=5-int=6,99-ext=1,22",
         "dirichlet": [
-            { "name": "r_int", "value": 2 },
-            { "name": "r_ext", "value": 0 }
+            { "name": "r_int", "value": 6.99 },
+            { "name": "r_ext", "value": 1.22 }
         ]
     },
     {
-        "name": "int_3V_ext_1V",
+        "name": "sigma=5-int=2,41-ext=3,33",
         "dirichlet": [
-            { "name": "r_int", "value": 3 },
-            { "name": "r_ext", "value": 1 }
+            { "name": "r_int", "value": 2.41 },
+            { "name": "r_ext", "value": 3.33 }
         ]
     },
     {
-        "name": "int_5V_ext_2V",
+        "name": "sigma=5-int=8,12-ext=4,56",
         "dirichlet": [
-            { "name": "r_int", "value": 5 },
-            { "name": "r_ext", "value": 2 }
+            { "name": "r_int", "value": 8.12 },
+            { "name": "r_ext", "value": 4.56 }
         ]
     },
     {
-        "name": "int_10V_ext_5V",
+        "name": "sigma=5-int=5,67-ext=7,77",
         "dirichlet": [
-            { "name": "r_int", "value": 10 },
-            { "name": "r_ext", "value": 5 }
+            { "name": "r_int", "value": 5.67 },
+            { "name": "r_ext", "value": 7.77 }
         ]
     },
     {
-        "name": "int_1.5V_ext_0.5V",
+        "name": "sigma=5-int=1,23-ext=2,22",
         "dirichlet": [
-            { "name": "r_int", "value": 1.5 },
-            { "name": "r_ext", "value": 0.5 }
+            { "name": "r_int", "value": 1.23 },
+            { "name": "r_ext", "value": 2.22 }
         ]
     },
     {
-        "name": "int_2.5V_ext_1V",
+        "name": "sigma=5-int=4,56-ext=5,55",
         "dirichlet": [
-            { "name": "r_int", "value": 2.5 },
-            { "name": "r_ext", "value": 1 }
+            { "name": "r_int", "value": 4.56 },
+            { "name": "r_ext", "value": 5.55 }
         ]
     },
     {
-        "name": "int_4V_ext_2V",
+        "name": "sigma=5-int=7,88-ext=6,66",
         "dirichlet": [
-            { "name": "r_int", "value": 4 },
-            { "name": "r_ext", "value": 2 }
+            { "name": "r_int", "value": 7.88 },
+            { "name": "r_ext", "value": 6.66 }
         ]
     },
     {
-        "name": "int_7V_ext_3V",
+        "name": "sigma=5-int=9,34-ext=8,88",
         "dirichlet": [
-            { "name": "r_int", "value": 7 },
-            { "name": "r_ext", "value": 3 }
+            { "name": "r_int", "value": 9.34 },
+            { "name": "r_ext", "value": 8.88 }
         ]
     },
     {
-        "name": "int_8V_ext_4V",
+        "name": "sigma=5-int=2,77-ext=9,99",
         "dirichlet": [
-            { "name": "r_int", "value": 8 },
-            { "name": "r_ext", "value": 4 }
+            { "name": "r_int", "value": 2.77 },
+            { "name": "r_ext", "value": 9.99 }
         ]
     }
   ]
