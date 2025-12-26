@@ -1,17 +1,16 @@
 // 01_prep_freeze_ids.geo
 // Goal: import STEP, scale mm->m, (optional) light healing,
 // perform conformal split (BooleanFragments) and serialize a
-// frozen geometry with stable IDs (.geo_unrolled + .xao).
+// frozen geometry with stable IDs (.xao).
 // No meshing, no physical groups here.
 
 SetFactory("OpenCASCADE");
 General.Terminal = 1;
-
 // Disable auto-coherence write-backs we don't control explicitly
 Geometry.AutoCoherence = 0;
 
 // ---------- toggles ----------
-doHeal      = 0;  // 1 = OCC small edges/faces fix + sewing (before booleans)
+doHeal      = 1;  // 1 = OCC small edges/faces fix + sewing (before booleans)
 doCoherence = 1;  // 1 = remove duplicates after import (can renumber)
 doFragment  = 1;  // 1 = conformal split (BooleanFragments)
 
@@ -30,7 +29,6 @@ If (doHeal)
   Geometry.OCCFixSmallEdges      = 1;
   Geometry.OCCFixSmallFaces      = 1;
   Geometry.OCCSewFaces           = 1;
-  Geometry.OCCMakeSolids         = 1;
 EndIf
 
 vs_pre[] = Volume{:};
@@ -62,6 +60,6 @@ If (#vs[] == 0)
   Exit;
 EndIf
 
-// ---------- save frozen geometry (XAO + stub GEO) ----------
+// ---------- save frozen geometry (XAO) ----------
 Printf(">> Saving frozen geometry...");
 Save StrCat(GetEnv("OUT_PATH"));
