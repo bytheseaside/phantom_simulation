@@ -71,7 +71,7 @@ Mesh.HighOrderOptimize = 1;        // Basic optimization
 Mesh.SecondOrderLinear = 1;        // Straight internal edges (safer for PDE)
 
 Mesh.CharacteristicLengthMin = 0.0005;  // 0.5 mm — minimum mesh size
-Mesh.CharacteristicLengthMax = 0.002;   // 2.0 mm — maximum mesh size in interior gel
+Mesh.CharacteristicLengthMax = 0.005;   // 5.0 mm — maximum mesh size
 Mesh.MeshSizeFromCurvature  = 25;       // Curvature-driven refinement sensitivity
 
 Mesh.Optimize = 1;
@@ -95,21 +95,21 @@ Field[1].NumPointsPerCurve = 200;
 
 Field[2] = Threshold;
 Field[2].InField = 1;
-Field[2].SizeMin = 0.0005;   // 0.5 mm — highest resolution near electrode–gel contact
+Field[2].SizeMin = 0.001;   // 1 mm — highest resolution near electrode–gel contact
 Field[2].SizeMax = 0.002;    // 2.0 mm — far from electrodes
-Field[2].DistMin = 0.002;   // ≤ 2 mm → apply SizeMin
-Field[2].DistMax = 0.008;    // 2–8 mm → transition to SizeMax
+Field[2].DistMin = 0.003;   // ≤ 3 mm → apply SizeMin
+Field[2].DistMax = 0.008;    // 3–8 mm → transition to SizeMax
 
 // 4) Refinement near shell–gel interface
 shell_volume_boundaries[] = Boundary{ Volume{ shell_volume_ids[] }; };
 
 Field[3] = Distance;
-Field[3].SurfacesList = shell_volume_boundaries[]
+Field[3].SurfacesList = { shell_volume_boundaries[] };
 Field[3].NumPointsPerCurve = 200;
 
 Field[4] = Threshold;
 Field[4].InField = 3;
-Field[4].SizeMin = 0.0005;   // 0.5 mm — near shell boundaries (≈6 P2 elements across 3.2mm)
+Field[4].SizeMin = 0.001;    // 1 mm — near shell boundaries
 Field[4].SizeMax = 0.002;    // 2.0 mm — far from shell
 Field[4].DistMin = 0.003;    // ≤ 3 mm → SizeMin
 Field[4].DistMax = 0.008;    // 3–8 mm → transition zone
