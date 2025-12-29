@@ -12,6 +12,7 @@ int_vol_id[]  = { 1 };
 ext_vol_id[]  = { 2 };  
 //* Surfaces
 r0_surfaces[] = { 2 };
+r2_surfaces[] = { 3 };
 
 
 
@@ -34,6 +35,7 @@ Mesh.Smoothing = 10;
 Physical Volume("int", 1) = { int_vol_id[] };
 Physical Volume("ext", 2) = { ext_vol_id[] };
 Physical Surface("r0", 3) = { r0_surfaces[] };
+Physical Surface("r2", 4) = { r2_surfaces[] };
 
 
 // 6) Mesh + save

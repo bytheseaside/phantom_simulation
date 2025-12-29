@@ -1,5 +1,5 @@
 {
-  "mesh": "./mesh.msh",
+  "mesh": "./spheres.msh",
   "output": "./cases",
   "volumes": [
     { "sigma": 4.1, "name": "ext" },
@@ -7,11 +7,56 @@
   ],
   "cases": [
     {
-        "name": "base-case__v=",
-        "dirichlet": [
-            { "name": "r_int", "value": 2.5 },
-            { "name": "r_ext", "value": 1.0 }
-        ]
+      "name": "case_r0=1.0",
+      "dirichlet": [
+        { "name": "r0", "value": 1.0 }
+      ]
+    },
+    {
+      "name": "case_r0=-1.5",
+      "dirichlet": [
+        { "name": "r0", "value": -1.5 }
+      ]
+    },
+    {
+      "name": "case_r0=0.8",
+      "dirichlet": [
+        { "name": "r0", "value": 0.8 }
+      ]
+    },
+    {
+      "name": "case_r0=-2.3",
+      "dirichlet": [
+        { "name": "r0", "value": -2.3 }
+      ]
+    },
+    {
+      "name": "case_r0=1.0_r2=2.0",
+      "dirichlet": [
+        { "name": "r0", "value": 1.0 },
+        { "name": "r2", "value": 2.0 }
+      ]
+    },
+    {
+      "name": "case_r0=-1.5_r2=-2.5",
+      "dirichlet": [
+        { "name": "r0", "value": -1.5 },
+        { "name": "r2", "value": -2.5 }
+      ]
+    },
+    {
+      "name": "case_r0=0.8_r2=-1.2",
+      "dirichlet": [
+        { "name": "r0", "value": 0.8 },
+        { "name": "r2", "value": -1.2 }
+      ]
+    },
+    {
+      "name": "case_r0=-2.3_r2=1.7",
+      "dirichlet": [
+        { "name": "r0", "value": -2.3 },
+        { "name": "r2", "value": 1.7 }
+      ]
     }
   ]
 }
