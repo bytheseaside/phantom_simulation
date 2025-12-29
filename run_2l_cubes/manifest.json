@@ -1,0 +1,82 @@
+{
+  "mesh": "./cubes.msh",
+  "output": "./cases",
+  "volumes": [
+    { "sigma": 4.1, "name": "outer" },
+    { "sigma": 0.33, "name": "inner" }
+  ],
+  "cases": [
+    {
+      "name": "case_1",
+      "dirichlet": [
+        { "name": "T", "value": 1.0 },
+        { "name": "R", "value": -1.0 },
+        { "name": "S", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "case_2",
+      "dirichlet": [
+        { "name": "T", "value": 2.0 },
+        { "name": "R", "value": -2.0 },
+        { "name": "S", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "case_3",
+      "dirichlet": [
+        { "name": "T", "value": -1.0 },
+        { "name": "R", "value": 1.0 },
+        { "name": "S", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "case_4",
+      "dirichlet": [
+        { "name": "T", "value": 3.14 },
+        { "name": "R", "value": -3.14 },
+        { "name": "S", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "case_5",
+      "dirichlet": [
+        { "name": "T", "value": -2.72 },
+        { "name": "R", "value": 2.72 },
+        { "name": "S", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "superposition_case1+case3",
+      "dirichlet": [
+        { "name": "T", "value": 0.0 },
+        { "name": "R", "value": 0.0 },
+        { "name": "S", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "superposition_2*case1+case2",
+      "dirichlet": [
+        { "name": "T", "value": 4.0 },
+        { "name": "R", "value": -4.0 },
+        { "name": "S", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "superposition_case4+case5",
+      "dirichlet": [
+        { "name": "T", "value": 0.42 },
+        { "name": "R", "value": -0.42 },
+        { "name": "S", "value": 0.0 }
+      ]
+    },
+    {
+      "name": "superposition_3*case3-case2",
+      "dirichlet": [
+        { "name": "T", "value": -5.0 },
+        { "name": "R", "value": 5.0 },
+        { "name": "S", "value": 0.0 }
+      ]
+    }
+  ]
+}

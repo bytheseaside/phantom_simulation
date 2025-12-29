@@ -1,0 +1,17 @@
+{
+  "mesh": "./mesh.msh",
+  "output": "./cases",
+  "volumes": [
+    { "sigma": 4.1, "name": "ext" },
+    { "sigma": 0.33, "name": "int" }
+  ],
+  "cases": [
+    {
+        "name": "base-case__v=",
+        "dirichlet": [
+            { "name": "r_int", "value": 2.5 },
+            { "name": "r_ext", "value": 1.0 }
+        ]
+    }
+  ]
+}

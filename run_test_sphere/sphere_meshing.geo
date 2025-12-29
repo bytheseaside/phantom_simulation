@@ -1,9 +1,3 @@
-// test_sphere_meshing.geo — Test Sphere Meshing Script
-// Purpose: Simple script to test sphere meshing. Loads frozen geometry,
-// defines physical groups, sets mesh parameters, and generates a .msh file.
-// We test with similar mesh parameters as in the phantom head model, except for the refinement
-// field, which is omitted here for simplicity (not needed given the geometry).
-
 SetFactory("OpenCASCADE");
 General.Terminal = 1;
 
@@ -12,23 +6,13 @@ Merge StrCat(GetEnv("XAO_PATH"));
 vi[] = Volume{:}; si[] = Surface{:};
 Printf(">> Loaded geometry: Volumes=%g, Surfaces=%g", #vi[], #si[]);
 
-// 1) IDs for head, fill, and electrode contact surfaces
+// 1) IDs
 //* Volumes
 sphere_volume_ids[]  = { 1 };  
-// Volumes to remove BEFORE meshing (leave {} if none)
-volumes_to_delete[] = {  }; 
-
 //* Surfaces
 internal_surfaces[] = { 2 };
 external_surfaces[] = { 1 };
 
-If (#volumes_to_delete[] > 0)
-  Printf(">> Deleting %g unwanted volume(s).", #volumes_to_delete[]);
-  Delete { Volume{ volumes_to_delete[] }; }
-EndIf
-
-vp[] = Volume{:}; sp[] = Surface{:};
-Printf(">> Geometry processed: Volumes=%g, Surfaces=%g", #vp[], #sp[]);
 
 // 2) Global mesh parameters
 Mesh.ElementOrder = 2;             // Use 2nd-order tetrahedra (quadratic elements)

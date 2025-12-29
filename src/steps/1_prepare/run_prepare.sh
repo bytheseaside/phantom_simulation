@@ -53,4 +53,4 @@ OUT_FILE="$(realpath "$OUT_DIR")/$(basename "$OUT_FILE")"
 SCRIPT_DIR="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
 
 echo ">> Running gmsh prep (freeze IDs)..."
-STEP_FILE="$STEP_FILE" OUT_PATH="$OUT_FILE" gmsh -v 4 - "$SCRIPT_DIR/01_prep_freeze_ids.geo"
+STEP_FILE="$STEP_FILE" OUT_PATH="$OUT_FILE" gmsh -v 4 - "$SCRIPT_DIR/prep_geom.geo"
