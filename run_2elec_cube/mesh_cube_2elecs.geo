@@ -10,13 +10,13 @@ Printf(">> Loaded geometry: Volumes=%g, Surfaces=%g", #vi[], #si[]);
 inner_cube_volume[]  = { 1 };
 outer_cube_volume[]  = { 2 };
 //* Surfaces
-jack1_t_surfaces[] = { 21, 20, 19, 18, 17 };
-jack1_r_surfaces[] = { 15, 14 , 13 };
-jack1_s_surfaces[] = { 5 };
+jack1_t_surfaces[] = { 32, 31, 30, 29, 28 };
+jack1_r_surfaces[] = { 26, 25, 24 };
+jack1_s_surfaces[] = { 2 };
 
-jack2_t_surfaces[] = { 32, 31, 30, 29, 28 };
-jack2_r_surfaces[] = { 26, 25, 24 };
-jack2_s_surfaces[] = { 2 };
+jack2_t_surfaces[] = { 21, 20, 19, 18, 17 };
+jack2_r_surfaces[] = { 15, 14, 13 };
+jack2_s_surfaces[] = { 5 };
 
 
 // 2) Global mesh parameters
@@ -25,8 +25,8 @@ Mesh.HighOrderOptimize = 1;        // Basic optimization
 
 Mesh.SecondOrderLinear = 1;        // Straight internal edges (safer for PDE)
 
-Mesh.CharacteristicLengthMin = 0.0001;  
-Mesh.CharacteristicLengthMax = 0.0005;  
+Mesh.CharacteristicLengthMin = 0.0005;  
+Mesh.CharacteristicLengthMax = 0.0015;  
 
 Mesh.Optimize = 1;
 Mesh.OptimizeNetgen = 1;
