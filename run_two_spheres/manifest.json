@@ -1,5 +1,5 @@
 {
-  "mesh": "./spheres.msh",
+  "mesh": "./mesh.msh",
   "output": "./cases",
   "volumes": [
     { "sigma": 4.1, "name": "ext" },

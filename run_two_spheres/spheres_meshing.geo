@@ -12,13 +12,13 @@ int_vol_id[]  = { 1 };
 ext_vol_id[]  = { 2 };  
 //* Surfaces
 r0_surfaces[] = { 2 };
+r1_surfaces[] = { 1 };
 r2_surfaces[] = { 3 };
 
 
 
 // 2) Global mesh parameters
 Mesh.ElementOrder = 2;             // Use 2nd-order tetrahedra (quadratic elements)
-// Mesh.HighOrderOptimize = 2;     // Advanced optimization of high-order nodes -> RAM killer
 Mesh.HighOrderOptimize = 1;        // Basic optimization
 
 Mesh.SecondOrderLinear = 1;        // Straight internal edges (safer for PDE)
@@ -35,6 +35,7 @@ Mesh.Smoothing = 10;
 Physical Volume("int", 1) = { int_vol_id[] };
 Physical Volume("ext", 2) = { ext_vol_id[] };
 Physical Surface("r0", 3) = { r0_surfaces[] };
+Physical Surface("r1", 5) = { r1_surfaces[] };
 Physical Surface("r2", 4) = { r2_surfaces[] };
 
 
