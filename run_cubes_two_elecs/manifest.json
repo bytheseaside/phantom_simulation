@@ -1,5 +1,5 @@
 {
-  "mesh": "./cube_mesh.msh",
+  "mesh": "./mesh.msh",
   "output": "./cases",
   "volumes": [
     { "sigma": 0.33, "name": "inner" },

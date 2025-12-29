@@ -9,6 +9,7 @@ Printf(">> Loaded geometry: Volumes=%g, Surfaces=%g", #vi[], #si[]);
 //* Volumes
 inner_cube_volume[]  = { 1 };
 outer_cube_volume[]  = { 2 };
+
 //* Surfaces
 jack1_t_surfaces[] = { 32, 31, 30, 29, 28 };
 jack1_r_surfaces[] = { 26, 25, 24 };
@@ -22,7 +23,6 @@ jack2_s_surfaces[] = { 5 };
 // 2) Global mesh parameters
 Mesh.ElementOrder = 2;             // Use 2nd-order tetrahedra (quadratic elements)
 Mesh.HighOrderOptimize = 1;        // Basic optimization
-
 Mesh.SecondOrderLinear = 1;        // Straight internal edges (safer for PDE)
 
 Mesh.CharacteristicLengthMin = 0.0005;  
