@@ -38,7 +38,7 @@ e5_tip[] = { 2318, 2319, 2320, 2321, 2322 };
 e5_ring[] = { 2314, 2315, 2316 };
 e5_sleeve[] = {  2312 };
 // Electrode 6
-e6_tip[] = { 2231, 2232, 2233, 2234, 2235 };
+e6_tip[] = { 2331, 2232, 2233, 2334, 2335 };
 e6_ring[] = { 2327, 2328, 2329 };
 e6_sleeve[] = { 2325 };
 // Electrode 7
@@ -62,7 +62,7 @@ Mesh.ElementOrder = 2;             // Use 2nd-order tetrahedra (quadratic elemen
 Mesh.HighOrderOptimize = 1;        // Basic optimization
 Mesh.SecondOrderLinear = 1;        // Straight internal edges (safer for PDE)
 
-Mesh.CharacteristicLengthMin = 0.0003;  // 0.3 mm — minimum mesh size
+Mesh.CharacteristicLengthMin = 0.0005;  // 0.5 mm — minimum mesh size
 Mesh.CharacteristicLengthMax = 0.001;   // 1.0 mm — maximum mesh size
 Mesh.MeshSizeFromCurvature  = 25;       // Curvature-driven refinement sensitivity
 
