@@ -43,12 +43,12 @@ def main(case: str, probes: str, out: str) -> None:
 
     sampled.UpdatePipeline()
 
-    # --- ACTUALLY RENDER A VIEW (what you asked for)
+    # --- ACTUALLY RENDER A VIEW 
     render_view = CreateView("RenderView")
     Show(sampled, render_view)     # show resampled data
     Render(render_view)            # force a full render pass
 
-    # --- Save CSV (same settings as your working GUI trace)
+    # --- Save CSV
     SaveData(
         str(out),
         proxy=sampled,

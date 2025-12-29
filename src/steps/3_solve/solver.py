@@ -108,37 +108,12 @@ def write_output_files(
 ) -> None:
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Convert cell_tags to DG0 function (volumes)
-    Q_cell = fem.functionspace(mesh, ("DG", 0))
-    volume_id = fem.Function(Q_cell, name="Volume_ID")
-    volume_id.x.array[:] = cell_tags.values
-
-    surface_id = fem.Function(Q_cell, name="Surface_ID")
-    surface_id.x.array[:] = 0  # Initialize with 0
-    # Map facet tags to cells (each cell gets the max facet tag on its boundary)
-    mesh.topology.create_connectivity(mesh.topology.dim, mesh.topology.dim - 1)
-    mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
-    
-    for facet_idx in range(len(facet_tags.values)):
-        facet = facet_tags.indices[facet_idx]
-        tag_value = facet_tags.values[facet_idx]
-        
-        # Get cells connected to this facet
-        cells = mesh.topology.connectivity(mesh.topology.dim - 1, mesh.topology.dim).links(facet)
-        
-        # Assign tag to those cells
-        for cell in cells:
-            surface_id.x.array[cell] = tag_value
-
-
     
     with XDMFFile(MPI.COMM_SELF, str(output_path), "w") as xdmf:
         xdmf.write_mesh(mesh)
         xdmf.write_function(u)
-        xdmf.write_function(volume_id)
-        xdmf.write_function(surface_id)
-
+        xdmf.write_meshtags(cell_tags, mesh.geometry)
+        xdmf.write_meshtags(facet_tags, mesh.geometry)        
 
 # --------------------------------------------------------------------------------------
 # Main solver routine
