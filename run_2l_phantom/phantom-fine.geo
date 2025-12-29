@@ -11,48 +11,54 @@ Printf(">> Loaded geometry: Volumes=%g, Surfaces=%g", #vi[], #si[]);
 
 // 1) IDs for head, fill, and electrode contact surfaces
 //* Volumes
-conductive_shell_volume_ids[] = { 2 };
-non_conductive_shell_volume_ids[] = { 3 }; 
-fill_volume_ids[]  = { 1 };  
+conductive_shell_volume_ids[] = { 1 };
+non_conductive_shell_volume_ids[] = { 5 }; 
+fill_volume_ids[]  = { 2 };   
+
+cleaning_volume_ids[] = { 3, 4, 6, 7, 8, 9, 10, 11, 12 };
 
 
 //* Surfaces - Jack TRS electrodes
 // Electrode 1
-e1_tip[] = { 2272, 2273, 2274, 2275, 2276 };
-e1_ring[] = { 2266, 2267, 2268 };
-e1_sleeve[] = { 50 };
+e1_tip[] = { 6005, 5997, 5989, 5981, 5973 };
+e1_ring[] = { 5903, 5855, 5816 };
+e1_sleeve[] = { 5639 };
 // Electrode 2
-e2_tip[] = { 43, 44, 45, 46, 47 };
-e2_ring[] = { 2281, 2282, 2283 };
-e2_sleeve[] = { 48  };
+e2_tip[] = { 6004, 5996, 5988, 5980, 5972 };
+e2_ring[] = { 5902, 5854, 5815 };
+e2_sleeve[] = { 5638 };
 // Electrode 3
-e3_tip[] = {  2290, 2291, 2292, 2293, 2294 };
-e3_ring[] = { 2298, 2299, 2300 };
-e3_sleeve[] = { 2302 };
+e3_tip[] = { 6006, 5998, 5990, 5982, 5974 };
+e3_ring[] = { 5904, 5856, 5817 };
+e3_sleeve[] = { 5640 };
 // Electrode 4
-e4_tip[] = { 2305, 2306, 2307, 2308, 2309 };
-e4_ring[] = {  35, 36, 37 };
-e4_sleeve[] = { 2304 };
+e4_tip[] = {   };
+e4_ring[] = {   };
+e4_sleeve[] = {   };
 // Electrode 5
-e5_tip[] = { 2318, 2319, 2320, 2321, 2322 };
-e5_ring[] = { 2314, 2315, 2316 };
-e5_sleeve[] = {  2312 };
+e5_tip[] = {   };
+e5_ring[] = {   };
+e5_sleeve[] = {    };
 // Electrode 6
-e6_tip[] = { 2331, 2232, 2233, 2334, 2335 };
-e6_ring[] = { 2327, 2328, 2329 };
-e6_sleeve[] = { 2325 };
+e6_tip[] = {   };
+e6_ring[] = {   };
+e6_sleeve[] = {   };
 // Electrode 7
-e7_tip[] = { 2340, 2341, 2342, 2343, 2344 };
-e7_ring[] = { 2346, 2347, 2348 };
-e7_sleeve[] = { 2338 };
+e7_tip[] = {   };
+e7_ring[] = {   };
+e7_sleeve[] = {   };
 // Electrode 8
-e8_tip[] = { 7, 8, 9, 10, 11 };
-e8_ring[] = { 14, 15, 16 };
-e8_sleeve[] = { 2351 };
+e8_tip[] = {   };
+e8_ring[] = {   };
+e8_sleeve[] = {   };
 // Electrode 9
-e9_tip[] = { 2355, 2356, 2357, 2358, 2359 };
-e9_ring[] = { 2361, 2362, 2363 };
-e9_sleeve[] = { 2353 };
+e9_tip[] = {   };
+e9_ring[] = {   };
+e9_sleeve[] = {   };
+
+
+// Delete cleaning volumes - side effect of BooleanFragments
+Delete { Volume(cleaning_volume_ids[]); }
 
 vp[] = Volume{:}; sp[] = Surface{:};
 Printf(">> Geometry processed: Volumes=%g, Surfaces=%g", #vp[], #sp[]);

@@ -11,7 +11,7 @@ Printf(">> Loaded geometry: Volumes=%g, Surfaces=%g", #vi[], #si[]);
 outer_volume_id[]  = { 1 };  
 inner_volume_id[]  = { 2 };  
 //* Surfaces
-t_surfaces[] = { 30, 29, 28, 27, 26 };
+t_surfaces[] = { 21, 22, 23, 24, 25 };
 r_surfaces[] = { 14, 13, 12 };
 s_surfaces[] = { 17 };
 

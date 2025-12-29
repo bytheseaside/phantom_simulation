@@ -1,7 +1,6 @@
-// 01_prep_freeze_ids.geo
 SetFactory("OpenCASCADE");
 General.Terminal = 1;
-// Geometry.AutoCoherence = 
+// Geometry.AutoCoherence = 0
 
 // ---------- import ----------
 Printf(">> Importing STEP...");
@@ -11,14 +10,12 @@ Merge StrCat(GetEnv("STEP_FILE"));
 Printf(">> Scaling mm -> m...");
 Dilate {{0,0,0}, 0.001} { Volume{:}; }
 
-// ---------- report ----------
-vs[] = Volume{:}; ss[] = Surface{:};
-Printf(">> Post-prep counts: Volumes=%g, Surfaces=%g", #vs[], #ss[]);
 
-If (#vs[] == 0)
-  Printf("!! ERROR: No volumes detected. Aborting.");
-  Exit;
-EndIf
+// ---------- topology changes ----------
+Printf(">> Conformality and coherence...");
+BooleanFragments{ Volume{:}; Delete; }{}
+Coherence;
+
 
 // ---------- save geometry ----------
 Printf(">> Saving frozen geometry...");

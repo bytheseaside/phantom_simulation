@@ -52,5 +52,5 @@ OUT_FILE="$(realpath "$OUT_DIR")/$(basename "$OUT_FILE")"
 # Get script directory
 SCRIPT_DIR="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
 
-echo ">> Running gmsh prep (freeze IDs)..."
+echo ">> Running gmsh prep..."
 STEP_FILE="$STEP_FILE" OUT_PATH="$OUT_FILE" gmsh -v 4 - "$SCRIPT_DIR/prep_geom.geo"

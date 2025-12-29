@@ -77,6 +77,14 @@
         { "name": "R", "value": 5.0 },
         { "name": "S", "value": 0.0 }
       ]
+    },
+    {
+      "name": "asymmetric",
+      "dirichlet": [
+        { "name": "T", "value": 4.78 },
+        { "name": "R", "value": -2.15 },
+        { "name": "S", "value": 0.0 }
+      ]
     }
   ]
 }
