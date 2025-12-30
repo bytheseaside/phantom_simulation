@@ -11,48 +11,50 @@ Printf(">> Loaded geometry: Volumes=%g, Surfaces=%g", #vi[], #si[]);
 
 // 1) IDs for head, fill, and electrode contact surfaces
 //* Volumes
-conductive_shell_volume_ids[] = { 2 };
-non_conductive_shell_volume_ids[] = { 3 }; 
-fill_volume_ids[]  = { 1 };  
-
+shell_volume_ids[] = {   };
+fill_volume_ids[]  = {  };  
+volume_ids_to_clean[] = {   };
 
 //* Surfaces - Jack TRS electrodes
 // Electrode 1
-e1_tip[] = { 2272, 2273, 2274, 2275, 2276 };
-e1_ring[] = { 2266, 2267, 2268 };
-e1_sleeve[] = { 50 };
+e1_tip[] = {  };
+e1_ring[] = {  };
+e1_sleeve[] = {  };
 // Electrode 2
-e2_tip[] = { 43, 44, 45, 46, 47 };
-e2_ring[] = { 2281, 2282, 2283 };
-e2_sleeve[] = { 48  };
+e2_tip[] = {  };
+e2_ring[] = {  };
+e2_sleeve[] = {  };
 // Electrode 3
-e3_tip[] = {  2290, 2291, 2292, 2293, 2294 };
-e3_ring[] = { 2298, 2299, 2300 };
-e3_sleeve[] = { 2302 };
+e3_tip[] = {  };
+e3_ring[] = {  };
+e3_sleeve[] = {  };
 // Electrode 4
-e4_tip[] = { 2305, 2306, 2307, 2308, 2309 };
-e4_ring[] = {  35, 36, 37 };
-e4_sleeve[] = { 2304 };
+e4_tip[] = {   };
+e4_ring[] = {   };
+e4_sleeve[] = {   };
 // Electrode 5
-e5_tip[] = { 2318, 2319, 2320, 2321, 2322 };
-e5_ring[] = { 2314, 2315, 2316 };
-e5_sleeve[] = {  2312 };
+e5_tip[] = {   };
+e5_ring[] = {   };
+e5_sleeve[] = {    };
 // Electrode 6
-e6_tip[] = { 2331, 2232, 2233, 2334, 2335 };
-e6_ring[] = { 2327, 2328, 2329 };
-e6_sleeve[] = { 2325 };
+e6_tip[] = {   };
+e6_ring[] = {   };
+e6_sleeve[] = {   };
 // Electrode 7
-e7_tip[] = { 2340, 2341, 2342, 2343, 2344 };
-e7_ring[] = { 2346, 2347, 2348 };
-e7_sleeve[] = { 2338 };
+e7_tip[] = {   };
+e7_ring[] = {   };
+e7_sleeve[] = {   };
 // Electrode 8
-e8_tip[] = { 7, 8, 9, 10, 11 };
-e8_ring[] = { 14, 15, 16 };
-e8_sleeve[] = { 2351 };
+e8_tip[] = {   };
+e8_ring[] = {   };
+e8_sleeve[] = {   };
 // Electrode 9
-e9_tip[] = { 2355, 2356, 2357, 2358, 2359 };
-e9_ring[] = { 2361, 2362, 2363 };
-e9_sleeve[] = { 2353 };
+e9_tip[] = {   };
+e9_ring[] = {   };
+e9_sleeve[] = {   };
+
+// Delete volumes - side effect of BooleanFragments
+Delete { Volume(volume_ids_to_clean[]); }
 
 // 2) Global mesh parameters
 Mesh.ElementOrder = 2;             // Use 2nd-order tetrahedra (quadratic elements)
@@ -60,7 +62,7 @@ Mesh.HighOrderOptimize = 1;        // Basic optimization
 Mesh.SecondOrderLinear = 1;        // Straight internal edges (safer for PDE)
 
 Mesh.CharacteristicLengthMin = 0.0005;  // 0.5 mm — minimum mesh size
-Mesh.CharacteristicLengthMax = 0.003;   // 3.0 mm — maximum mesh size
+Mesh.CharacteristicLengthMax = 0.005;   // 5.0 mm — maximum mesh size
 Mesh.MeshSizeFromCurvature  = 25;       // Curvature-driven refinement sensitivity
 
 Mesh.Optimize = 1;
@@ -110,47 +112,44 @@ Field[5].FieldsList = {2, 4};
 Background Field = 5; // Use the minimum size from electrode and shell fields
 
 // 5) Physical groups used in solver
-Physical Volume("conductive_shell") = { conductive_shell_volume_ids[] };
-Physical Volume("non_conductive_shell") = { non_conductive_shell_volume_ids[] };
-Physical Volume("fill")  = { fill_volume_ids[]  };
+Physical Volume("shell", 1) = { shell_volume_ids[] };
+Physical Volume("fill", 2)  = { fill_volume_ids[]  };
 
-Physical Surface("e1_T") = { e1_tip[] };
-Physical Surface("e1_R") = { e1_ring[] };
-Physical Surface("e1_S") = { e1_sleeve[] };
+Physical Surface("e1_T", 11) = { e1_tip[] };
+Physical Surface("e1_R", 12) = { e1_ring[] };
+Physical Surface("e1_S", 13) = { e1_sleeve[] };
 
-Physical Surface("e2_T") = { e2_tip[] };
-Physical Surface("e2_R") = { e2_ring[] };
-Physical Surface("e2_S") = { e2_sleeve[] };
+Physical Surface("e2_T", 21) = { e2_tip[] };
+Physical Surface("e2_R", 22) = { e2_ring[] };
+Physical Surface("e2_S", 23) = { e2_sleeve[] };
 
-Physical Surface("e3_T") = { e3_tip[] };
-Physical Surface("e3_R") = { e3_ring[] };
-Physical Surface("e3_S") = { e3_sleeve[] };
+Physical Surface("e3_T", 31) = { e3_tip[] };
+Physical Surface("e3_R", 32) = { e3_ring[] };
+Physical Surface("e3_S", 33) = { e3_sleeve[] };
 
-Physical Surface("e4_T") = { e4_tip[] };
-Physical Surface("e4_R") = { e4_ring[] };
-Physical Surface("e4_S") = { e4_sleeve[] };
+Physical Surface("e4_T", 41) = { e4_tip[] };
+Physical Surface("e4_R", 42) = { e4_ring[] };
+Physical Surface("e4_S", 43) = { e4_sleeve[] };
 
+Physical Surface("e5_T", 51) = { e5_tip[] };
+Physical Surface("e5_R", 52) = { e5_ring[] };
+Physical Surface("e5_S", 53) = { e5_sleeve[] };
 
-Physical Surface("e5_T") = { e5_tip[] };
-Physical Surface("e5_R") = { e5_ring[] };
-Physical Surface("e5_S") = { e5_sleeve[] };
+Physical Surface("e6_T", 61) = { e6_tip[] };
+Physical Surface("e6_R", 62) = { e6_ring[] };
+Physical Surface("e6_S", 63) = { e6_sleeve[] };
 
-Physical Surface("e6_T") = { e6_tip[] };
-Physical Surface("e6_R") = { e6_ring[] };
-Physical Surface("e6_S") = { e6_sleeve[] };
+Physical Surface("e7_T", 71) = { e7_tip[] };
+Physical Surface("e7_R", 72) = { e7_ring[] };
+Physical Surface("e7_S", 73) = { e7_sleeve[] };
 
-Physical Surface("e7_T") = { e7_tip[] };
-Physical Surface("e7_R") = { e7_ring[] };
-Physical Surface("e7_S") = { e7_sleeve[] };
+Physical Surface("e8_T", 81) = { e8_tip[] };
+Physical Surface("e8_R", 82) = { e8_ring[] };
+Physical Surface("e8_S", 83) = { e8_sleeve[] };
 
-Physical Surface("e8_T") = { e8_tip[] };
-Physical Surface("e8_R") = { e8_ring[] };
-Physical Surface("e8_S") = { e8_sleeve[] };
-
-Physical Surface("e9_T") = { e9_tip[] };
-Physical Surface("e9_R") = { e9_ring[] };
-Physical Surface("e9_S") = { e9_sleeve[] };
-
+Physical Surface("e9_T", 91) = { e9_tip[] };
+Physical Surface("e9_R", 92) = { e9_ring[] };
+Physical Surface("e9_S", 93) = { e9_sleeve[] };
 
 // 6) Mesh + save
 Mesh 3;

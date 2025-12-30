@@ -11,26 +11,23 @@ Printf(">> Loaded geometry: Volumes=%g, Surfaces=%g", #vi[], #si[]);
 
 // 1) IDs for head, fill, and electrode contact surfaces
 //* Volumes
-conductive_shell_volume_ids[] = { 1 };
-non_conductive_shell_volume_ids[] = { 5 }; 
-fill_volume_ids[]  = { 2 };   
-
-cleaning_volume_ids[] = { 3, 4, 6, 7, 8, 9, 10, 11, 12 };
-
+shell_volume_ids[] = {  };
+fill_volume_ids[] = {  };   
+volume_ids_to_clean[] = {   };
 
 //* Surfaces - Jack TRS electrodes
 // Electrode 1
-e1_tip[] = { 6005, 5997, 5989, 5981, 5973 };
-e1_ring[] = { 5903, 5855, 5816 };
-e1_sleeve[] = { 5639 };
+e1_tip[] = {  };
+e1_ring[] = {  };
+e1_sleeve[] = {  };
 // Electrode 2
-e2_tip[] = { 6004, 5996, 5988, 5980, 5972 };
-e2_ring[] = { 5902, 5854, 5815 };
-e2_sleeve[] = { 5638 };
+e2_tip[] = {  };
+e2_ring[] = {  };
+e2_sleeve[] = {  };
 // Electrode 3
-e3_tip[] = { 6006, 5998, 5990, 5982, 5974 };
-e3_ring[] = { 5904, 5856, 5817 };
-e3_sleeve[] = { 5640 };
+e3_tip[] = {  };
+e3_ring[] = {  };
+e3_sleeve[] = {  };
 // Electrode 4
 e4_tip[] = {   };
 e4_ring[] = {   };
@@ -57,8 +54,8 @@ e9_ring[] = {   };
 e9_sleeve[] = {   };
 
 
-// Delete cleaning volumes - side effect of BooleanFragments
-Delete { Volume(cleaning_volume_ids[]); }
+// Delete volumes - side effect of BooleanFragments
+Delete { Volume(volume_ids_to_clean[]); }
 
 vp[] = Volume{:}; sp[] = Surface{:};
 Printf(">> Geometry processed: Volumes=%g, Surfaces=%g", #vp[], #sp[]);
@@ -78,47 +75,44 @@ Mesh.Smoothing = 10;
 
 
 // 3) Physical groups used in solver
-Physical Volume("conductive_shell") = { conductive_shell_volume_ids[] };
-Physical Volume("non_conductive_shell") = { non_conductive_shell_volume_ids[] };
-Physical Volume("fill")  = { fill_volume_ids[]  };
+Physical Volume("shell", 1) = { shell_volume_ids[] };
+Physical Volume("fill", 2)  = { fill_volume_ids[]  };
 
-Physical Surface("e1_T") = { e1_tip[] };
-Physical Surface("e1_R") = { e1_ring[] };
-Physical Surface("e1_S") = { e1_sleeve[] };
+Physical Surface("e1_T", 11) = { e1_tip[] };
+Physical Surface("e1_R", 12) = { e1_ring[] };
+Physical Surface("e1_S", 13) = { e1_sleeve[] };
 
-Physical Surface("e2_T") = { e2_tip[] };
-Physical Surface("e2_R") = { e2_ring[] };
-Physical Surface("e2_S") = { e2_sleeve[] };
+Physical Surface("e2_T", 21) = { e2_tip[] };
+Physical Surface("e2_R", 22) = { e2_ring[] };
+Physical Surface("e2_S", 23) = { e2_sleeve[] };
 
-Physical Surface("e3_T") = { e3_tip[] };
-Physical Surface("e3_R") = { e3_ring[] };
-Physical Surface("e3_S") = { e3_sleeve[] };
+Physical Surface("e3_T", 31) = { e3_tip[] };
+Physical Surface("e3_R", 32) = { e3_ring[] };
+Physical Surface("e3_S", 33) = { e3_sleeve[] };
 
-Physical Surface("e4_T") = { e4_tip[] };
-Physical Surface("e4_R") = { e4_ring[] };
-Physical Surface("e4_S") = { e4_sleeve[] };
+Physical Surface("e4_T", 41) = { e4_tip[] };
+Physical Surface("e4_R", 42) = { e4_ring[] };
+Physical Surface("e4_S", 43) = { e4_sleeve[] };
 
+Physical Surface("e5_T", 51) = { e5_tip[] };
+Physical Surface("e5_R", 52) = { e5_ring[] };
+Physical Surface("e5_S", 53) = { e5_sleeve[] };
 
-Physical Surface("e5_T") = { e5_tip[] };
-Physical Surface("e5_R") = { e5_ring[] };
-Physical Surface("e5_S") = { e5_sleeve[] };
+Physical Surface("e6_T", 61) = { e6_tip[] };
+Physical Surface("e6_R", 62) = { e6_ring[] };
+Physical Surface("e6_S", 63) = { e6_sleeve[] };
 
-Physical Surface("e6_T") = { e6_tip[] };
-Physical Surface("e6_R") = { e6_ring[] };
-Physical Surface("e6_S") = { e6_sleeve[] };
+Physical Surface("e7_T", 71) = { e7_tip[] };
+Physical Surface("e7_R", 72) = { e7_ring[] };
+Physical Surface("e7_S", 73) = { e7_sleeve[] };
 
-Physical Surface("e7_T") = { e7_tip[] };
-Physical Surface("e7_R") = { e7_ring[] };
-Physical Surface("e7_S") = { e7_sleeve[] };
+Physical Surface("e8_T", 81) = { e8_tip[] };
+Physical Surface("e8_R", 82) = { e8_ring[] };
+Physical Surface("e8_S", 83) = { e8_sleeve[] };
 
-Physical Surface("e8_T") = { e8_tip[] };
-Physical Surface("e8_R") = { e8_ring[] };
-Physical Surface("e8_S") = { e8_sleeve[] };
-
-Physical Surface("e9_T") = { e9_tip[] };
-Physical Surface("e9_R") = { e9_ring[] };
-Physical Surface("e9_S") = { e9_sleeve[] };
-
+Physical Surface("e9_T", 91) = { e9_tip[] };
+Physical Surface("e9_R", 92) = { e9_ring[] };
+Physical Surface("e9_S", 93) = { e9_sleeve[] };
 
 // 6) Mesh + save
 Mesh 3;

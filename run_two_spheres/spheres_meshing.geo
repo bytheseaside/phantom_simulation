@@ -11,9 +11,9 @@ Printf(">> Loaded geometry: Volumes=%g, Surfaces=%g", #vi[], #si[]);
 int_vol_id[]  = { 1 };  
 ext_vol_id[]  = { 2 };  
 //* Surfaces
-r0_surfaces[] = { 2 };
-r1_surfaces[] = { 1 };
-r2_surfaces[] = { 3 };
+r0_surfaces[] = { 2 }; // r0 = 1 mm 
+r1_surfaces[] = { 1 }; // r1 = 5 mm 
+r2_surfaces[] = { 3 }; // r2 = 15 mm 
 
 
 
