@@ -11,8 +11,8 @@ Printf(">> Loaded geometry: Volumes=%g, Surfaces=%g", #vi[], #si[]);
 
 // 1) IDs for head, fill, and electrode contact surfaces
 //* Volumes
-shell_volume_ids[] = {  };
-fill_volume_ids[]  = {   };  
+shell_volume_ids[] = { };
+fill_volume_ids[]  = {  };  
 volume_ids_to_clean[] = {   };
 
 //* Surfaces - Jack TRS electrodes

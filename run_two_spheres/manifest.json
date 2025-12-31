@@ -19,9 +19,9 @@
       ]
     },
     {
-      "name": "case_r0=0.8",
+      "name": "case_r0=0.5",
       "dirichlet": [
-        { "name": "r0", "value": 0.8 }
+        { "name": "r0", "value": 0.5 }
       ]
     },
     {
