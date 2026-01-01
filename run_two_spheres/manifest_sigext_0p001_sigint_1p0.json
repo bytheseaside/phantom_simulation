@@ -1,0 +1,77 @@
+{
+  "mesh": "./mesh.msh",
+  "output": "./cases_sigext_0p001_sigint_1p0",
+  "volumes": [
+    {
+      "sigma": 0.001,
+      "name": "ext"
+    },
+    {
+      "sigma": 1.0,
+      "name": "int"
+    }
+  ],
+  "cases": [
+    {
+      "name": "dn_r0_1p0_ext_neumann",
+      "dirichlet": [
+        {
+          "name": "r0",
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "name": "dd_r0_1p0_r2_0p0__step",
+      "dirichlet": [
+        {
+          "name": "r0",
+          "value": 1.0
+        },
+        {
+          "name": "r2",
+          "value": 0.0
+        }
+      ]
+    },
+    {
+      "name": "dd_r0_0p0_r2_1p0__step_flip",
+      "dirichlet": [
+        {
+          "name": "r0",
+          "value": 0.0
+        },
+        {
+          "name": "r2",
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "name": "dd_r0_m0p5_r2_0p5__centered",
+      "dirichlet": [
+        {
+          "name": "r0",
+          "value": -0.5
+        },
+        {
+          "name": "r2",
+          "value": 0.5
+        }
+      ]
+    },
+    {
+      "name": "dd_r0_1p0_r2_0p999999__dv_tiny",
+      "dirichlet": [
+        {
+          "name": "r0",
+          "value": 1.0
+        },
+        {
+          "name": "r2",
+          "value": 0.999999
+        }
+      ]
+    }
+  ]
+}

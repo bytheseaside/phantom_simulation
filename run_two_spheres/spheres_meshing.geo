@@ -11,9 +11,9 @@ Printf(">> Loaded geometry: Volumes=%g, Surfaces=%g", #vi[], #si[]);
 int_vol_id[]  = { 1 };  
 ext_vol_id[]  = { 2 };  
 //* Surfaces
-r0_surfaces[] = { 2 }; // r0 = 1 mm 
-r1_surfaces[] = { 1 }; // r1 = 5 mm 
-r2_surfaces[] = { 3 }; // r2 = 15 mm 
+r0_surfaces[] = { 2 }; // r0 = 2 mm
+r1_surfaces[] = { 1 }; // r1 = 80 mm
+r2_surfaces[] = { 3 }; // r2 = 83.20 mm
 
 
 
@@ -23,8 +23,8 @@ Mesh.HighOrderOptimize = 1;        // Basic optimization
 
 Mesh.SecondOrderLinear = 1;        // Straight internal edges (safer for PDE)
 
-Mesh.CharacteristicLengthMin = 0.0001;  
-Mesh.CharacteristicLengthMax = 0.0005;  
+Mesh.CharacteristicLengthMin = 0.0005;  
+Mesh.CharacteristicLengthMax = 0.002;  
 
 Mesh.Optimize = 1;
 Mesh.OptimizeNetgen = 1;
