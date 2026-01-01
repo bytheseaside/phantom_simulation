@@ -17561,16 +17561,6 @@
         <Proxy value="22162"/>
       </Property>
     </Proxy>
-    <Proxy group="misc" type="RepresentationAnimationHelper" id="33234" servers="16">
-      <Property name="Source" id="33234.Source" number_of_elements="1">
-        <Proxy value="33223"/>
-      </Property>
-    </Proxy>
-    <Proxy group="misc" type="RepresentationAnimationHelper" id="33507" servers="16">
-      <Property name="Source" id="33507.Source" number_of_elements="1">
-        <Proxy value="33496"/>
-      </Property>
-    </Proxy>
     <Proxy group="representations" type="SpreadSheetRepresentation" id="14778" servers="21">
       <Property name="Assembly" id="14778.Assembly" number_of_elements="1">
         <Element index="0" value=""/>
@@ -38694,116 +38684,6 @@
         <Domain name="range" id="13902.Tolerance.range"/>
       </Property>
     </Proxy>
-    <Proxy group="filters" type="ProbeLine" id="33223" servers="1">
-      <Property name="ComputeTolerance" id="33223.ComputeTolerance" number_of_elements="1">
-        <Element index="0" value="1"/>
-        <Domain name="bool" id="33223.ComputeTolerance.bool"/>
-      </Property>
-      <Property name="Input" id="33223.Input" number_of_elements="1">
-        <Proxy value="22162" output_port="0"/>
-        <Domain name="groups" id="33223.Input.groups"/>
-        <Domain name="input_array" id="33223.Input.input_array"/>
-        <Domain name="input_type" id="33223.Input.input_type"/>
-      </Property>
-      <Property name="PassCellArrays" id="33223.PassCellArrays" number_of_elements="1">
-        <Element index="0" value="0"/>
-        <Domain name="bool" id="33223.PassCellArrays.bool"/>
-      </Property>
-      <Property name="PassFieldArrays" id="33223.PassFieldArrays" number_of_elements="1">
-        <Element index="0" value="1"/>
-        <Domain name="bool" id="33223.PassFieldArrays.bool"/>
-      </Property>
-      <Property name="PassPartialArrays" id="33223.PassPartialArrays" number_of_elements="1">
-        <Element index="0" value="1"/>
-        <Domain name="bool" id="33223.PassPartialArrays.bool"/>
-      </Property>
-      <Property name="PassPointArrays" id="33223.PassPointArrays" number_of_elements="1">
-        <Element index="0" value="0"/>
-        <Domain name="bool" id="33223.PassPointArrays.bool"/>
-      </Property>
-      <Property name="Point1" id="33223.Point1" number_of_elements="3">
-        <Element index="0" value="0"/>
-        <Element index="1" value="0"/>
-        <Element index="2" value="0"/>
-        <Domain name="range" id="33223.Point1.range"/>
-      </Property>
-      <Property name="Point2" id="33223.Point2" number_of_elements="3">
-        <Element index="0" value="0.0832"/>
-        <Element index="1" value="0"/>
-        <Element index="2" value="0"/>
-        <Domain name="range" id="33223.Point2.range"/>
-      </Property>
-      <Property name="Resolution" id="33223.Resolution" number_of_elements="1">
-        <Element index="0" value="400"/>
-      </Property>
-      <Property name="SamplingPattern" id="33223.SamplingPattern" number_of_elements="1">
-        <Element index="0" value="2"/>
-        <Domain name="enum" id="33223.SamplingPattern.enum">
-          <Entry value="0" text="Sample At Cell Boundaries"/>
-          <Entry value="1" text="Sample At Segment Centers"/>
-          <Entry value="2" text="Sample Uniformly"/>
-        </Domain>
-      </Property>
-      <Property name="Tolerance" id="33223.Tolerance" number_of_elements="1">
-        <Element index="0" value="2.220446049250313e-16"/>
-        <Domain name="range" id="33223.Tolerance.range"/>
-      </Property>
-    </Proxy>
-    <Proxy group="filters" type="ProbeLine" id="33496" servers="1">
-      <Property name="ComputeTolerance" id="33496.ComputeTolerance" number_of_elements="1">
-        <Element index="0" value="1"/>
-        <Domain name="bool" id="33496.ComputeTolerance.bool"/>
-      </Property>
-      <Property name="Input" id="33496.Input" number_of_elements="1">
-        <Proxy value="22162" output_port="0"/>
-        <Domain name="groups" id="33496.Input.groups"/>
-        <Domain name="input_array" id="33496.Input.input_array"/>
-        <Domain name="input_type" id="33496.Input.input_type"/>
-      </Property>
-      <Property name="PassCellArrays" id="33496.PassCellArrays" number_of_elements="1">
-        <Element index="0" value="0"/>
-        <Domain name="bool" id="33496.PassCellArrays.bool"/>
-      </Property>
-      <Property name="PassFieldArrays" id="33496.PassFieldArrays" number_of_elements="1">
-        <Element index="0" value="1"/>
-        <Domain name="bool" id="33496.PassFieldArrays.bool"/>
-      </Property>
-      <Property name="PassPartialArrays" id="33496.PassPartialArrays" number_of_elements="1">
-        <Element index="0" value="1"/>
-        <Domain name="bool" id="33496.PassPartialArrays.bool"/>
-      </Property>
-      <Property name="PassPointArrays" id="33496.PassPointArrays" number_of_elements="1">
-        <Element index="0" value="0"/>
-        <Domain name="bool" id="33496.PassPointArrays.bool"/>
-      </Property>
-      <Property name="Point1" id="33496.Point1" number_of_elements="3">
-        <Element index="0" value="0"/>
-        <Element index="1" value="0"/>
-        <Element index="2" value="0"/>
-        <Domain name="range" id="33496.Point1.range"/>
-      </Property>
-      <Property name="Point2" id="33496.Point2" number_of_elements="3">
-        <Element index="0" value="0.0832"/>
-        <Element index="1" value="0"/>
-        <Element index="2" value="0"/>
-        <Domain name="range" id="33496.Point2.range"/>
-      </Property>
-      <Property name="Resolution" id="33496.Resolution" number_of_elements="1">
-        <Element index="0" value="400"/>
-      </Property>
-      <Property name="SamplingPattern" id="33496.SamplingPattern" number_of_elements="1">
-        <Element index="0" value="2"/>
-        <Domain name="enum" id="33496.SamplingPattern.enum">
-          <Entry value="0" text="Sample At Cell Boundaries"/>
-          <Entry value="1" text="Sample At Segment Centers"/>
-          <Entry value="2" text="Sample Uniformly"/>
-        </Domain>
-      </Property>
-      <Property name="Tolerance" id="33496.Tolerance" number_of_elements="1">
-        <Element index="0" value="2.220446049250313e-16"/>
-        <Domain name="range" id="33496.Tolerance.range"/>
-      </Property>
-    </Proxy>
     <Proxy group="filters" type="Clip" id="14251" servers="1">
       <Property name="ClipFunction" id="14251.ClipFunction" number_of_elements="1">
         <Proxy value="14243"/>
@@ -39449,7 +39329,7 @@
         <Element index="0" value="0"/>
         <Element index="1" value="0"/>
       </Property>
-      <Property name="TimeSources" id="256.TimeSources" number_of_elements="15">
+      <Property name="TimeSources" id="256.TimeSources" number_of_elements="13">
         <Proxy value="13814"/>
         <Proxy value="13825"/>
         <Proxy value="13836"/>
@@ -39463,8 +39343,6 @@
         <Proxy value="13902"/>
         <Proxy value="21378"/>
         <Proxy value="22162"/>
-        <Proxy value="33223"/>
-        <Proxy value="33496"/>
       </Property>
       <Property name="TimestepValues" id="256.TimestepValues" number_of_elements="1">
         <Element index="0" value="0"/>
@@ -39855,10 +39733,10 @@
         <Domain name="bool" id="15702.BottomAxisLogScale.bool"/>
       </Property>
       <Property name="BottomAxisRangeMaximum" id="15702.BottomAxisRangeMaximum" number_of_elements="1">
-        <Element index="0" value="0.09497611169125234"/>
+        <Element index="0" value="0.09236738358295471"/>
       </Property>
       <Property name="BottomAxisRangeMinimum" id="15702.BottomAxisRangeMinimum" number_of_elements="1">
-        <Element index="0" value="0.0005121116912523279"/>
+        <Element index="0" value="-0.000060656224348979576"/>
       </Property>
       <Property name="BottomAxisTitle" id="15702.BottomAxisTitle" number_of_elements="1">
         <Element index="0" value=""/>
@@ -40007,10 +39885,10 @@
         <Domain name="bool" id="15702.LeftAxisLogScale.bool"/>
       </Property>
       <Property name="LeftAxisRangeMaximum" id="15702.LeftAxisRangeMaximum" number_of_elements="1">
-        <Element index="0" value="1.1032084403550253"/>
+        <Element index="0" value="1.0433342081616095"/>
       </Property>
       <Property name="LeftAxisRangeMinimum" id="15702.LeftAxisRangeMinimum" number_of_elements="1">
-        <Element index="0" value="-0.04879155964497478"/>
+        <Element index="0" value="-0.08383700900063101"/>
       </Property>
       <Property name="LeftAxisTitle" id="15702.LeftAxisTitle" number_of_elements="1">
         <Element index="0" value=""/>
@@ -40090,8 +39968,8 @@
         </Domain>
       </Property>
       <Property name="LegendPosition" id="15702.LegendPosition" number_of_elements="2">
-        <Element index="0" value="1582"/>
-        <Element index="1" value="707"/>
+        <Element index="0" value="1570"/>
+        <Element index="1" value="329"/>
       </Property>
       <Property name="LegendSymbolWidth" id="15702.LegendSymbolWidth" number_of_elements="1">
         <Element index="0" value="25"/>
@@ -40161,10 +40039,10 @@
         <Domain name="bool" id="15702.RightAxisLogScale.bool"/>
       </Property>
       <Property name="RightAxisRangeMaximum" id="15702.RightAxisRangeMaximum" number_of_elements="1">
-        <Element index="0" value="7.16616"/>
+        <Element index="0" value="7.083480153150261"/>
       </Property>
       <Property name="RightAxisRangeMinimum" id="15702.RightAxisRangeMinimum" number_of_elements="1">
-        <Element index="0" value="-0.5061599999999998"/>
+        <Element index="0" value="-0.42348015315025966"/>
       </Property>
       <Property name="RightAxisTitle" id="15702.RightAxisTitle" number_of_elements="1">
         <Element index="0" value=""/>
@@ -40320,10 +40198,10 @@
         <Domain name="bool" id="15702.TopAxisLogScale.bool"/>
       </Property>
       <Property name="TopAxisRangeMaximum" id="15702.TopAxisRangeMaximum" number_of_elements="1">
-        <Element index="0" value="7.16616"/>
+        <Element index="0" value="7.083480153150261"/>
       </Property>
       <Property name="TopAxisRangeMinimum" id="15702.TopAxisRangeMinimum" number_of_elements="1">
-        <Element index="0" value="-0.5061599999999998"/>
+        <Element index="0" value="-0.42348015315025966"/>
       </Property>
       <Property name="TopAxisTitle" id="15702.TopAxisTitle" number_of_elements="1">
         <Element index="0" value=""/>
@@ -47927,12 +47805,6 @@
     <ProxyCollection name="pq_helper_proxies.22162">
       <Item id="22173" name="RepresentationAnimationHelper"/>
     </ProxyCollection>
-    <ProxyCollection name="pq_helper_proxies.33223">
-      <Item id="33234" name="RepresentationAnimationHelper"/>
-    </ProxyCollection>
-    <ProxyCollection name="pq_helper_proxies.33496">
-      <Item id="33507" name="RepresentationAnimationHelper"/>
-    </ProxyCollection>
     <ProxyCollection name="representations">
       <Item id="14778" name="SpreadSheetRepresentation1" logname="SpreadSheetRepresentation1"/>
       <Item id="22208" name="SpreadSheetRepresentation2" logname="SpreadSheetRepresentation2"/>
@@ -47982,8 +47854,6 @@
       <Item id="22162" name="FINAL" logname="PassArrays1"/>
       <Item id="21378" name="PARAM INJECTOR" logname="ProgrammableSource1"/>
       <Item id="13902" name="Plot over x- radius" logname="PlotOverLine1"/>
-      <Item id="33223" name="PlotOverLine1" logname="PlotOverLine1"/>
-      <Item id="33496" name="PlotOverLine2" logname="PlotOverLine2"/>
       <Item id="14251" name="Section view" logname="Clip1"/>
       <Item id="14767" name="Statistics" logname="DescriptiveStatistics1"/>
       <Item id="13825" name="with analytical u + extras" logname="ProgrammableFilter1"/>
@@ -48344,10 +48214,6 @@
           <Property source_property="EdgeColor" target_id="21005" target_property="EdgeColor" unlink_if_modified="1"/>
           <Property source_property="InteractiveSelectionColor" target_id="21005" target_property="InteractiveSelectionColor" unlink_if_modified="1"/>
           <Property source_property="SelectionColor" target_id="21005" target_property="SelectionColor" unlink_if_modified="1"/>
-          <Property source_property="ForegroundColor" target_id="33237" target_property="ForegroundWidgetColor" unlink_if_modified="1"/>
-          <Property source_property="InteractiveWidgetColor" target_id="33237" target_property="InteractiveWidgetColor" unlink_if_modified="1"/>
-          <Property source_property="ForegroundColor" target_id="33510" target_property="ForegroundWidgetColor" unlink_if_modified="1"/>
-          <Property source_property="InteractiveWidgetColor" target_id="33510" target_property="InteractiveWidgetColor" unlink_if_modified="1"/>
         </Links>
       </SettingsProxy>
       <SettingsProxy group="settings" type="GeneralSettings">
