@@ -66,7 +66,7 @@ Mesh.HighOrderOptimize = 1;        // Basic optimization
 Mesh.SecondOrderLinear = 1;        // Straight internal edges (safer for PDE)
 
 Mesh.CharacteristicLengthMin = 0.0005;  // 0.5 mm — minimum mesh size
-Mesh.CharacteristicLengthMax = 0.001;   // 1.0 mm — maximum mesh size
+Mesh.CharacteristicLengthMax = 0.0015;   // 1.5 mm — maximum mesh size
 Mesh.MeshSizeFromCurvature  = 25;       // Curvature-driven refinement sensitivity
 
 Mesh.Optimize = 1;
