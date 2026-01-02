@@ -1,6 +1,4 @@
-// phantom_head_meshing — Mesh Parameters for Phantom Head EEG Model
-// Fine general params, without local refinement
-
+//Mesh Parameters for Phantom Head EEG Model
 SetFactory("OpenCASCADE");
 General.Terminal = 1;
 
@@ -11,47 +9,47 @@ Printf(">> Loaded geometry: Volumes=%g, Surfaces=%g", #vi[], #si[]);
 
 // 1) IDs for head, fill, and electrode contact surfaces
 //* Volumes
-shell_volume_ids[] = {  };
-fill_volume_ids[] = {  };   
-volume_ids_to_clean[] = {   };
+shell_volume_ids[] = { 2 };
+fill_volume_ids[] = { 1 };   
+volume_ids_to_clean[] = { 3, 4, 5 };
 
 //* Surfaces - Jack TRS electrodes
 // Electrode 1
-e1_tip[] = {  };
-e1_ring[] = {  };
-e1_sleeve[] = {  };
+e1_tip[] = { 2001, 1893, 1739, 1617, 1493 };
+e1_ring[] = { 1067, 891, 777 };
+e1_sleeve[] = { 326 };
 // Electrode 2
-e2_tip[] = {  };
-e2_ring[] = {  };
-e2_sleeve[] = {  };
+e2_tip[] = { 2000, 1892, 1738, 1616, 1492 };
+e2_ring[] = { 1066, 890, 776 };
+e2_sleeve[] = { 325 };
 // Electrode 3
-e3_tip[] = {  };
-e3_ring[] = {  };
-e3_sleeve[] = {  };
+e3_tip[] = { 2002, 1894, 1740, 1618, 1494 };
+e3_ring[] = { 1068, 892, 778 };
+e3_sleeve[] = { 327 };
 // Electrode 4
-e4_tip[] = {   };
-e4_ring[] = {   };
-e4_sleeve[] = {   };
+e4_tip[] = { 1999, 1891, 1737, 1615, 1491 };
+e4_ring[] = { 1065, 889, 775 };
+e4_sleeve[] = { 324 };
 // Electrode 5
-e5_tip[] = {   };
-e5_ring[] = {   };
-e5_sleeve[] = {    };
+e5_tip[] = { 2003, 1895, 1741, 1619, 1495 };
+e5_ring[] = { 1069, 893, 779 };
+e5_sleeve[] = { 328};
 // Electrode 6
-e6_tip[] = {   };
-e6_ring[] = {   };
-e6_sleeve[] = {   };
+e6_tip[] = { 1998, 1890, 1736, 1614, 1490 };
+e6_ring[] = { 1064, 888, 774 };
+e6_sleeve[] = { 323 };
 // Electrode 7
-e7_tip[] = {   };
-e7_ring[] = {   };
-e7_sleeve[] = {   };
+e7_tip[] = { 2004, 1896, 1742, 1620, 1496 };
+e7_ring[] = { 1070, 894, 780 };
+e7_sleeve[] = { 329  };
 // Electrode 8
-e8_tip[] = {   };
-e8_ring[] = {   };
-e8_sleeve[] = {   };
+e8_tip[] = { 1997, 1889, 1735, 1613, 1489 };
+e8_ring[] = { 1063, 887, 773 };
+e8_sleeve[] = { 322 };
 // Electrode 9
-e9_tip[] = {   };
-e9_ring[] = {   };
-e9_sleeve[] = {   };
+e9_tip[] = { 330, 249, 170, 93, 14 };
+e9_ring[] = { 8, 6, 4 };
+e9_sleeve[] = { 5 };
 
 
 // Delete volumes - side effect of BooleanFragments
