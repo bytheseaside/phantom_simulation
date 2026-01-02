@@ -81,8 +81,8 @@ def _get_vlines_in_range(r_min_mm, r_max_mm, r0_mm, r1_mm, r2_mm, ax):
 
 def _get_x_range_for_mask(xlim_mm, r0, r2):
     if xlim_mm is not None:
-        r_min = xlim_mm[0] / 1000.0
-        r_max = xlim_mm[1] / 1000.0
+        r_min = max(xlim_mm[0] / 1000.0, r0)
+        r_max = min(xlim_mm[1] / 1000.0, r2)
     else:
         r_min = r0
         r_max = r2
@@ -128,11 +128,11 @@ def style_axis_offset_text(ax, color="0.5", fontsize=10):
     ax.yaxis.get_offset_text().set_color(color)
     ax.yaxis.get_offset_text().set_fontsize(fontsize)
 
-def finish_axes(ax,  r_min_mm, r_max_mm, r0_mm, r1_mm, r2_mm, fig=None):
+def finish_axes(ax,  r_min_mm, r_max_mm, r0_mm, r1_mm, r2_mm, fig=None, use_sci_notation=True):
     """Apply standard finishing touches to all plots: xlim, autoscaling, grid, ticks, legend."""
-    # Standard tick locators
-    ax.xaxis.set_major_locator(MaxNLocator(nbins=10))
-    ax.yaxis.set_major_locator(MaxNLocator(nbins=10))
+    # Use scientific notation when needed (outside range 0.001 to 1000)
+    if use_sci_notation:
+        ax.ticklabel_format(axis='both', style='sci', scilimits=(-3, 3))
     style_axis_offset_text(ax)
             
     # Grid
@@ -302,7 +302,7 @@ def plot_u_errors(save_dir, params, src_proxy, xlim_mm=None):
     else:
         ax.set_title("Relative error of potential u(r)")
     
-    finish_axes(ax, r_min_mm=r_min * 1000.0, r_max_mm=r_max * 1000.0, r0_mm=r0_mm, r1_mm=r1_mm, r2_mm=r2_mm, fig=fig)
+    finish_axes(ax, r_min_mm=r_min * 1000.0, r_max_mm=r_max * 1000.0, r0_mm=r0_mm, r1_mm=r1_mm, r2_mm=r2_mm, fig=fig, use_sci_notation=False)
     fig.savefig(out_rel, dpi=SAVE_DPI, format=SAVE_FORMAT)
     plt.close(fig)
 
@@ -756,8 +756,8 @@ def plot_laplacian_vs_r(save_dir, params, src_proxy, xlim_mm=None):
 
     fig, ax = plt.subplots(figsize=FIGSIZE)
 
-    # Analytical solution: Laplacian should be zero everywhere
-    ax.axhline(0, linestyle="-", linewidth=1.5, color=COLOR_ANALYTICAL, label="Analytical", zorder=1)
+    # Analytical solution: Laplacian should be zero everywhere 
+    ax.hlines(0, r_min * 1000.0, r_max * 1000.0, linestyle="-", linewidth=1.5, color=COLOR_ANALYTICAL, label="Analytical", zorder=1)
     
     ax.plot(r_num_mm, lap_num, linestyle="-", marker="o", markersize=1, color=COLOR_NUMERICAL, label="Numerical", zorder=2)
 
