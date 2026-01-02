@@ -1,6 +1,6 @@
 {
-  "mesh": "./mesh_1.msh",
-  "output": "./cases_s1=1_s2=1_mesh1",
+  "mesh": "./mesh_2.msh",
+  "output": "./cases_s1=1_s2=1_mesh2",
   "volumes": [
     {
       "sigma": 1.0,

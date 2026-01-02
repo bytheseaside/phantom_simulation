@@ -15,16 +15,12 @@ export FFCX_REGENERATE=1
 mkdir -p "$DOLFINX_JIT_CACHE_DIR" "$FFCX_CACHE_DIR" "$XDG_CACHE_HOME"
 
 # --- macOS linker fix: avoid duplicate LC_RPATH from Conda flags/CFFI ---
-# Remove possibly intrusive Conda flags that cause duplicate rpaths
 unset CFLAGS CXXFLAGS CPPFLAGS LDFLAGS
-# Use clang toolchain and build bundle-style shared modules for cffi
 export CC="${CC:-clang}"
 export CXX="${CXX:-clang++}"
 export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-13.0}"
 export ARCHFLAGS="-arch arm64"
-# Key line: force cffi/distutils to build Python extension bundles w/o extra rpaths
 export LDSHARED="$CC -bundle -undefined dynamic_lookup $ARCHFLAGS"
-# Optional: see compile/link lines if something fails
 export FFCX_JIT_LOG_LEVEL=DEBUG
 
 # Validate manifest file argument
