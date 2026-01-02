@@ -617,8 +617,8 @@ def plot_flux_vs_r(save_dir, params, coeffs, src_proxy, xlim_mm=None):
     r_grid = np.linspace(r_min, r_max, 2000)
     flux_ana = np.empty_like(r_grid)
     mask_v1 = r_grid <= r1
-    flux_ana[mask_v1]  = sigma1 * A1 / (r_grid[mask_v1]**2)
-    flux_ana[~mask_v1] = sigma2 * A2 / (r_grid[~mask_v1]**2)
+    flux_ana[mask_v1]  = - sigma1 * A1 / (r_grid[mask_v1]**2)
+    flux_ana[~mask_v1] = - sigma2 * A2 / (r_grid[~mask_v1]**2)
 
     # --- convert x-axis to mm for plotting ---
     r_num_mm  = 1000.0 * r_num

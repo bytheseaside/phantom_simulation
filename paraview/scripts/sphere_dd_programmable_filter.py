@@ -1,20 +1,30 @@
 import numpy as np
 from vtkmodules.util.numpy_support import vtk_to_numpy, numpy_to_vtk
-
+from paraview.simple import FindSource
+from paraview import servermanager
 # ============================================================================
 # PARAMETERS 
 # ============================================================================
 
-V0 = 0.0        # potential at r0 [V]
-V2 = 1.0        # potential at r2 [V]
+params_src = FindSource("PARAM INJECTOR")
+if params_src is None:
+    raise RuntimeError('Params source not found. Create a Programmable Source named "PARAM INJECTOR".')
 
-r0 = 0.002      # inner radius [m]
-r1 = 0.080      # interface radius [m]
-r2 = 0.08320     # outer radius [m]
+params_tbl = servermanager.Fetch(params_src)
 
-sigma1 = 4   # conductivity inner shell [S/m]
-sigma2 = 0.33      # conductivity outer shell [S/m]
+def get_param(name: str) -> float:
+    col = params_tbl.GetColumnByName(name)
+    if col is None:
+        raise RuntimeError(f'Param "{name}" not found in Params table.')
+    return float(vtk_to_numpy(col)[0])
 
+r0 = get_param("r0")
+r1 = get_param("r1")
+r2 = get_param("r2")
+sigma1 = get_param("sigma1")
+sigma2 = get_param("sigma2")
+V0 = get_param("V0")
+V2 = get_param("V2")
 
 epsilon = 1e-12 # small value to avoid division by zero
 
@@ -164,7 +174,7 @@ vtk_shell = numpy_to_vtk(shell_id, deep=True)
 vtk_shell.SetName("shell_id")
 output.GetPointData().AddArray(vtk_shell)
 
-# Sigma 
+# Add to output
 vtk_sigma = numpy_to_vtk(sigma, deep=True)
 vtk_sigma.SetName("sigma")
 output.GetPointData().AddArray(vtk_sigma)
