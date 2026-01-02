@@ -3,7 +3,7 @@ run*/*_F
 **.step
 **.xao
 **.msh
-screenshots/
+**/plots
 *.code-workspace
 
 # Python cache
@@ -12,3 +12,5 @@ __**
 *.pyo
 *.pyd
 .Python
+
+
