@@ -1,9 +1,9 @@
 {
-  "mesh": "./mesh.msh",
-  "output": "./cases_sigext_0p001_sigint_1p0",
+  "mesh": "./mesh_1.msh",
+  "output": "./cases_s1=1_s2=1_mesh1",
   "volumes": [
     {
-      "sigma": 0.001,
+      "sigma": 1.0,
       "name": "ext"
     },
     {

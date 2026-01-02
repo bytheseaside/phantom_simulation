@@ -25,7 +25,7 @@ Mesh.SecondOrderLinear = 1;
 Mesh.CharacteristicLengthMin = 0.0003;  // 0.3 mm
 Mesh.CharacteristicLengthMax = 0.001;   // 1 mm
 
-Mesh.MeshSizeFromCurvature = 25;
+Mesh.MeshSizeFromCurvature = 20;
 Mesh.Optimize = 1;
 Mesh.OptimizeNetgen = 1;
 Mesh.Smoothing = 10;
