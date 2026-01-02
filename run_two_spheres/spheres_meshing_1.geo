@@ -1,5 +1,5 @@
 // ============================================================================
-// CONFIG 1: FINE UNIFORM (baseline - no refinement fields)
+// CONFIG 1
 // ============================================================================
 SetFactory("OpenCASCADE");
 General.Terminal = 1;
@@ -23,7 +23,7 @@ Mesh.HighOrderOptimize = 1;
 Mesh.SecondOrderLinear = 1;
 
 Mesh.CharacteristicLengthMin = 0.0005;  // 0.5 mm
-Mesh.CharacteristicLengthMax = 0.001;   // 1.0 mm - fine everywhere
+Mesh.CharacteristicLengthMax = 0.0015;   // 1.5 mm
 
 Mesh.MeshSizeFromCurvature = 25;
 Mesh.Optimize = 1;
@@ -39,4 +39,4 @@ Physical Surface("r2", 4) = { r2_surfaces[] };
 Mesh 3;
 Mesh.MshFileVersion = 4.1;
 Save StrCat(GetEnv("OUT_PATH"));
-Printf(">> Mesh written: FINE UNIFORM");
+Printf(">> Mesh written: CONFIG 1");
