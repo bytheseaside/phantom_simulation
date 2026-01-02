@@ -339,35 +339,36 @@ def plot_err_abs_histogram(
     r2_mm = r2 * 1000.0
 
     # --- Determine sampling range ---
+
+    r_min, r_max = _get_x_range_for_mask(xlim_mm, r0, r2)
     if xlim_mm is not None:
         # Use xlim to filter data
-        r_min_mm, r_max_mm = xlim_mm
-        mask_all = (r_mm >= r_min_mm) & (r_mm <= r_max_mm)
+        mask_all = (r_mm >= r_min * 1000.0) & (r_mm <= r_max * 1000.0)
         
         # Determine which volumes are present in the xlim range
-        has_v1 = r_min_mm < r1_mm  # xlim overlaps with v1
-        has_v2 = r_max_mm > r1_mm  # xlim overlaps with v2
+        has_v1 = r_min * 1000.0 < r1_mm  # xlim overlaps with v1
+        has_v2 = r_max * 1000.0 > r1_mm  # xlim overlaps with v2
         
         if has_v1 and has_v2:
             # Both volumes present
-            mask_v1 = (r_mm >= r_min_mm) & (r_mm < r1_mm)
-            mask_v2 = (r_mm >= r1_mm) & (r_mm <= r_max_mm)
-            title_suffix = f"({r_min_mm:.1f} ≤ r ≤ {r_max_mm:.1f} mm)"
-            labels = ["Inner sphere (r < r₁)", "Outer sphere (r ≥ r₁)"]
+            mask_v1 = (r_mm >= r_min * 1000.0) & (r_mm <= r1_mm)
+            mask_v2 = (r_mm > r1_mm) & (r_mm <= r_max * 1000.0)
+            title_suffix = f"({r_min*1000:.1f} ≤ r ≤ {r_max*1000:.1f} mm)"
+            labels = ["Inner sphere (r ≤ r₁)", "Outer sphere (r > r₁)"]
         elif has_v1:
             # Only v1 present
             mask_v1 = mask_all
             mask_v2 = np.zeros_like(mask_all, dtype=bool)
-            title_suffix = f"({r_min_mm:.1f} ≤ r ≤ {r_max_mm:.1f} mm, inner sphere)"
+            title_suffix = f"({r_min*1000:.1f} ≤ r ≤ {r_max*1000:.1f} mm, inner sphere)"
             labels = ["Inner sphere"]
         else:
             # Only v2 present
             mask_v1 = np.zeros_like(mask_all, dtype=bool)
             mask_v2 = mask_all
-            title_suffix = f"({r_min_mm:.1f} ≤ r ≤ {r_max_mm:.1f} mm, outer sphere)"
+            title_suffix = f"({r_min*1000:.1f} ≤ r ≤ {r_max*1000:.1f} mm, outer sphere)"
             labels = ["Outer sphere"]
         
-        fname_suffix = f"_xlim_{r_min_mm}_{r_max_mm}"
+        fname_suffix = f"_xlim_{r_min*1000}_{r_max*1000}"
     else:
         # No xlim: use full range
         mask_all = (r_mm >= r0_mm) & (r_mm <= r2_mm)
@@ -377,7 +378,7 @@ def plot_err_abs_histogram(
         fname_suffix = ""
         has_v1 = True
         has_v2 = True
-        labels = ["Inner sphere (r < r₁)", "Outer sphere (r ≥ r₁)"]
+        labels = ["Inner sphere (r ≤ r₁)", "Outer sphere (r < r₁)"]
 
     err_all = err[mask_all]
     err_v1 = err[mask_v1]
@@ -437,9 +438,9 @@ def plot_err_abs_histogram(
         edgecolor="black"
     )
 
-    for x in (p25, p50, p75):
+    for x in (p50, p99):
         ax.axvline(x, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES, alpha=0.6)
-
+        ax.text(x, ax.get_ylim()[1]*0.9, f"p{50 if x == p50 else 99}", rotation=90, va="top", ha="right", fontsize=8, color="0.5")
     ax.set_title(f"Absolute error distribution - N={N} {title_suffix} ")
     ax.set_xlabel("|error| [V]")
     ax.set_ylabel("point fraction")
@@ -873,37 +874,20 @@ def main():
     # ========================================================================
     print("3. Error histograms...")
     
-    # Full volume histogram (25 bins)
+    # Full volume histogram
     plot_err_abs_histogram(
         save_dir=save_dir,
         src_proxy=ds_src,
         params=params,
-        bins=25,
+        bins=15,
     )
     
-    # Full volume histogram (50 bins)
+    # Outer region histogram (r1-r2 with padding)
     plot_err_abs_histogram(
         save_dir=save_dir,
         src_proxy=ds_src,
         params=params,
-        bins=50,
-    )
-    
-    # Outer region histogram (r1-r2 with padding, 25 bins)
-    plot_err_abs_histogram(
-        save_dir=save_dir,
-        src_proxy=ds_src,
-        params=params,
-        bins=25,
-        xlim_mm=xlim_outer_region
-    )
-    
-    # Outer region histogram (r1-r2 with padding, 50 bins)
-    plot_err_abs_histogram(
-        save_dir=save_dir,
-        src_proxy=ds_src,
-        params=params,
-        bins=50,
+        bins=15,
         xlim_mm=xlim_outer_region
     )
     
