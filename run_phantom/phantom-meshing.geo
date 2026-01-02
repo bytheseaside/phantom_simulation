@@ -53,9 +53,11 @@ e9_sleeve[] = { 5 };
 
 
 // Delete volumes - side effect of BooleanFragments
-Delete { Volume(volume_ids_to_clean[]); }
+Delete { Volume{ volume_ids_to_clean[] }; }
 
-vp[] = Volume{:}; sp[] = Surface{:};
+// Recompute geometry sets
+vp[] = Volume{:};
+sp[] = Surface{:};
 Printf(">> Geometry processed: Volumes=%g, Surfaces=%g", #vp[], #sp[]);
 
 // 2) Global mesh parameters
