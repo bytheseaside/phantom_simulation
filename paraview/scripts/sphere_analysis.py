@@ -71,6 +71,22 @@ def _get_param(tbl, name: str) -> float:
         raise RuntimeError(f'Param "{name}" not found in params table.')
     return float(vtk_to_numpy(col)[0])
 
+def _get_vlines_in_range(r_min_mm, r_max_mm, r0_mm, r1_mm, r2_mm, ax):
+    ymin, ymax = ax.get_ylim()
+    y_text = (ymax + ymin) * 0.5 
+    for x in (r0_mm, r1_mm, r2_mm):
+        if x >= r_min_mm and x <= r_max_mm:
+            ax.axvline(x, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
+            ax.text(x, y_text, f"r₀ " if x == r0_mm else (f"r₁ " if x == r1_mm else "r₂ "), ha="right", va="top", fontsize=10, color="0.6")
+
+def _get_x_range_for_mask(xlim_mm, r0, r2):
+    if xlim_mm is not None:
+        r_min = xlim_mm[0] / 1000.0
+        r_max = xlim_mm[1] / 1000.0
+    else:
+        r_min = r0
+        r_max = r2
+    return r_min, r_max
 # ----------------------------
 # Loading stage
 # ----------------------------
@@ -112,42 +128,13 @@ def style_axis_offset_text(ax, color="0.5", fontsize=10):
     ax.yaxis.get_offset_text().set_color(color)
     ax.yaxis.get_offset_text().set_fontsize(fontsize)
 
-def finish_axes(ax, xlim_mm=None, fig=None):
+def finish_axes(ax,  r_min_mm, r_max_mm, r0_mm, r1_mm, r2_mm, fig=None):
     """Apply standard finishing touches to all plots: xlim, autoscaling, grid, ticks, legend."""
     # Standard tick locators
     ax.xaxis.set_major_locator(MaxNLocator(nbins=10))
     ax.yaxis.set_major_locator(MaxNLocator(nbins=10))
-    
-    # Apply xlim and autoscale y-axis based on visible data
-    if xlim_mm is not None:
-        ax.set_xlim(xlim_mm)
-        # Recalculate y-limits based on data visible in xlim range
-        # Only consider lines that have data (not axvline/axhline)
-        y_min_visible, y_max_visible = np.inf, -np.inf
-        
-        for line in ax.get_lines():
-            xdata = np.asarray(line.get_xdata())
-            ydata = np.asarray(line.get_ydata())
+    style_axis_offset_text(ax)
             
-            # Skip vertical/horizontal lines (they have only 2 points with same x or y)
-            if len(xdata) <= 2:
-                continue
-                
-            # Mask to xlim range
-            mask = (xdata >= xlim_mm[0]) & (xdata <= xlim_mm[1])
-            if np.any(mask):
-                y_visible = ydata[mask]
-                if len(y_visible) > 0:
-                    y_min_visible = min(y_min_visible, np.min(y_visible))
-                    y_max_visible = max(y_max_visible, np.max(y_visible))
-        
-        # Add 5% margin
-        if np.isfinite(y_min_visible) and np.isfinite(y_max_visible):
-            y_range = y_max_visible - y_min_visible
-            margin = 0.05 * y_range if y_range > 0 else 0.05 * abs(y_max_visible)
-            ax.set_ylim(y_min_visible - margin, y_max_visible + margin)
-
-        
     # Grid
     ax.grid(True, alpha=GRID_ALPHA)
     
@@ -156,6 +143,8 @@ def finish_axes(ax, xlim_mm=None, fig=None):
     ncol = len(handles) if len(handles) > 0 else 1
     ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.12), frameon=True, ncol=ncol)
     
+    _get_vlines_in_range(r_min_mm, r_max_mm, r0_mm, r1_mm, r2_mm, ax=ax)
+
     # Adjust figure layout to make room for legend below
     if fig is not None:
         fig.subplots_adjust(bottom=0.18)
@@ -182,12 +171,13 @@ def plot_u_vs_r(save_dir, params, coeffs, src_proxy, show_error=True, xlim_mm=No
 
     # arc_length == radius because Point1 is origin; crop to [r0, r2]
     r_num = arc
-    mask_volume = (r_num >= r0) & (r_num <= r2)
+    r_min, r_max = _get_x_range_for_mask(xlim_mm, r0, r2)
+    mask_volume = (r_num >= r_min) & (r_num <= r_max)
     r_num = r_num[mask_volume]
     u_num = u_num[mask_volume]
 
     # --- analytic continuous curve on a dense grid ---
-    r_grid = np.linspace(r0, r2, 2000)
+    r_grid = np.linspace(r_min, r_max, 2000)
     u_ana = np.empty_like(r_grid)
     mask_v1 = r_grid <= r1
     u_ana[mask_v1] = A1 / r_grid[mask_v1] + B1
@@ -225,10 +215,6 @@ def plot_u_vs_r(save_dir, params, coeffs, src_proxy, show_error=True, xlim_mm=No
             label="Absolute error"
         )
 
-    ax.axvline(r0_mm, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
-    ax.axvline(r1_mm, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
-    ax.axvline(r2_mm, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
-
     ax.set_xlabel("r [mm]")
     ax.set_ylabel("u [V]")
     # Modify the title of the plot to include xlim if provided
@@ -237,15 +223,8 @@ def plot_u_vs_r(save_dir, params, coeffs, src_proxy, show_error=True, xlim_mm=No
     else:
         ax.set_title("Potential - u(r)")
     
-    finish_axes(ax, xlim_mm=xlim_mm, fig=fig)
+    finish_axes(ax, r_min_mm=r_min * 1000.0, r_max_mm=r_max * 1000.0, r0_mm=r0_mm, r1_mm=r1_mm, r2_mm=r2_mm, fig=fig)
     
-    # Add text labels at top of plot (in data coordinates)
-    ymin, ymax = ax.get_ylim()
-    y_text = (ymax + ymin) * 0.5 
-    ax.text(r0_mm, y_text, " r₀", ha="right", va="top", fontsize=10, color="0.6")
-    ax.text(r1_mm, y_text, " r₁", ha="right", va="top", fontsize=10, color="0.6")
-    ax.text(r2_mm, y_text, " r₂", ha="right", va="top", fontsize=10, color="0.6")
-
     fig.savefig(out_path, dpi=SAVE_DPI, format=SAVE_FORMAT)
     plt.close(fig)
 
@@ -267,8 +246,8 @@ def plot_u_errors(save_dir, params, src_proxy, xlim_mm=None):
     arc = vtk_to_numpy(line_ds.GetPointData().GetArray("arc_length"))
     r_num = arc
 
-    # full volume
-    mask_volume = (r_num >= r0) & (r_num <= r2)
+    r_min, r_max = _get_x_range_for_mask(xlim_mm, r0, r2)
+    mask_volume = (r_num >= r_min) & (r_num <= r_max)
 
     r_mm = 1000.0 * r_num[mask_volume]
     r0_mm, r1_mm, r2_mm = 1000.0*r0, 1000.0*r1, 1000.0*r2
@@ -278,12 +257,10 @@ def plot_u_errors(save_dir, params, src_proxy, xlim_mm=None):
     err_rel = vtk_to_numpy(line_ds.GetPointData().GetArray("err_rel"))[mask_volume] * 100.0  # %
 
     os.makedirs(save_dir, exist_ok=True)
-    span = r2_mm - r0_mm
-    x_label_shift = 0.02 * span
 
     # ----------------- ABS ERROR PLOT -----------------
     if xlim_mm is not None:
-        xlim_str = f"_xlim_{xlim_mm[0]}_{xlim_mm[1]}"
+        xlim_str = f"_xlim_{r_min * 1000.0}_{r_max * 1000.0}"
         out_abs = os.path.join(save_dir, f"err_abs_vs_r{xlim_str}.{SAVE_FORMAT}")
     else:
         out_abs = os.path.join(save_dir, f"err_abs_vs_r.{SAVE_FORMAT}")
@@ -292,9 +269,6 @@ def plot_u_errors(save_dir, params, src_proxy, xlim_mm=None):
 
     ax.plot(r_mm, err_abs, linestyle=":", linewidth=0.8, marker="o", markersize=1, color=COLOR_ERROR, label="Absolute error")
 
-    ax.axvline(r0_mm, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
-    ax.axvline(r1_mm, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
-    ax.axvline(r2_mm, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
 
     ax.set_xlabel("r [mm]")
     ax.set_ylabel("|error| [V]")
@@ -303,19 +277,8 @@ def plot_u_errors(save_dir, params, src_proxy, xlim_mm=None):
     else:
         ax.set_title("u(r) absolute error")
     
-    finish_axes(ax, xlim_mm=xlim_mm, fig=fig)
-    
-    ax.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
-    style_axis_offset_text(ax, color="0.5", fontsize=10)
-    
-    # Add text labels at top of plot (in data coordinates)
-    ymin, ymax = ax.get_ylim()
-    y_text = (ymax + ymin) * 0.5 
-    ax.text(r0_mm, y_text, " r₀", ha="right", va="top", fontsize=10, color="0.6")
-    ax.text(r1_mm, y_text, " r₁", ha="right", va="top", fontsize=10, color="0.6")
-    ax.text(r2_mm, y_text, " r₂", ha="right", va="top", fontsize=10, color="0.6")
-
-
+    finish_axes(ax, r_min_mm=r_min * 1000.0, r_max_mm=r_max * 1000.0, r0_mm=r0_mm, r1_mm=r1_mm, r2_mm=r2_mm, fig=fig)
+        
     fig.savefig(out_abs, dpi=SAVE_DPI, format=SAVE_FORMAT)
     plt.close(fig)
 
@@ -330,9 +293,6 @@ def plot_u_errors(save_dir, params, src_proxy, xlim_mm=None):
 
     ax.plot(r_mm, err_rel, linestyle=":", linewidth=0.8, marker="o", markersize=1, color=COLOR_ERROR, label="Relative error")
 
-    ax.axvline(r0_mm, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
-    ax.axvline(r1_mm, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
-    ax.axvline(r2_mm, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
 
     ax.set_xlabel("r [mm]")
     ax.set_ylabel("relative error [%]")
@@ -342,15 +302,7 @@ def plot_u_errors(save_dir, params, src_proxy, xlim_mm=None):
     else:
         ax.set_title("Relative error of potential u(r)")
     
-    finish_axes(ax, xlim_mm=xlim_mm, fig=fig)
-    
-    # Add text labels at top of plot (in data coordinates)
-    ymin, ymax = ax.get_ylim()
-    y_text = (ymax + ymin) * 0.5 
-    ax.text(r0_mm, y_text, " r₀", ha="right", va="top", fontsize=10, color="0.6")
-    ax.text(r1_mm, y_text, " r₁", ha="right", va="top", fontsize=10, color="0.6")
-    ax.text(r2_mm, y_text, " r₂", ha="right", va="top", fontsize=10, color="0.6")
-
+    finish_axes(ax, r_min_mm=r_min * 1000.0, r_max_mm=r_max * 1000.0, r0_mm=r0_mm, r1_mm=r1_mm, r2_mm=r2_mm, fig=fig)
     fig.savefig(out_rel, dpi=SAVE_DPI, format=SAVE_FORMAT)
     plt.close(fig)
 
@@ -549,7 +501,9 @@ def plot_du_dr_vs_r(save_dir, params, coeffs, src_proxy, xlim_mm=None):
 
     # arc_length == radius because Point1 is origin; crop to (r0, r2)
     r_num = arc
-    mask_volume = (r_num > r0) & (r_num < r2)
+
+    r_min, r_max = _get_x_range_for_mask(xlim_mm, r0, r2)
+    mask_volume = (r_num > r_min) & (r_num < r_max)
     r_num = r_num[mask_volume]
     du_dr_num = du_dr_num[mask_volume]
 
@@ -562,7 +516,7 @@ def plot_du_dr_vs_r(save_dir, params, coeffs, src_proxy, xlim_mm=None):
 
 
     # --- analytic continuous curve on a dense grid ---
-    r_grid = np.linspace(r0, r2, 2000)
+    r_grid = np.linspace(r_min, r_max, 2000)
     du_dr_ana = np.empty_like(r_grid)
     mask_v1 = r_grid <= r1
     du_dr_ana[mask_v1] = - A1 / r_grid[mask_v1]**2
@@ -589,9 +543,6 @@ def plot_du_dr_vs_r(save_dir, params, coeffs, src_proxy, xlim_mm=None):
     ax.plot(r_grid_mm, du_dr_ana, color=COLOR_ANALYTICAL, label="Analytical")
     ax.plot(r_num_mm, du_dr_num, linestyle="None", marker="o", markersize=1, color=COLOR_NUMERICAL, label="Numerical")
 
-    ax.axvline(r0_mm, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
-    ax.axvline(r1_mm, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
-    ax.axvline(r2_mm, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
 
     ax.set_xlabel("r [mm]")
     ax.set_ylabel("du/dr [V/m]")
@@ -600,15 +551,8 @@ def plot_du_dr_vs_r(save_dir, params, coeffs, src_proxy, xlim_mm=None):
     else:
         ax.set_title("Potential derivative, du/dr")
     
-    finish_axes(ax, xlim_mm=xlim_mm, fig=fig)
+    finish_axes(ax, r_min_mm=r_min * 1000.0, r_max_mm=r_max * 1000.0, r0_mm=r0_mm, r1_mm=r1_mm, r2_mm=r2_mm, fig=fig)
     
-    # Add text labels at top of plot (in data coordinates)
-    ymin, ymax = ax.get_ylim()
-    y_text = (ymax + ymin) * 0.5 
-    ax.text(r0_mm, y_text, " r₀", ha="right", va="top", fontsize=10, color="0.6")
-    ax.text(r1_mm, y_text, " r₁", ha="right", va="top", fontsize=10, color="0.6")
-    ax.text(r2_mm, y_text, " r₂", ha="right", va="top", fontsize=10, color="0.6")
-
     fig.savefig(out_path, dpi=SAVE_DPI, format=SAVE_FORMAT )
     plt.close(fig)
 
@@ -629,25 +573,13 @@ def plot_du_dr_vs_r(save_dir, params, coeffs, src_proxy, xlim_mm=None):
         label="Absolute error"
     )
 
-    # same interface markers
-    ax2.axvline(r0_mm, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
-    ax2.axvline(r1_mm, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
-    ax2.axvline(r2_mm, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
-
     ax2.set_xlabel("r [mm]")
     ax2.set_ylabel("|error| [V/m]")  
     if xlim_mm is not None:
         ax2.set_title(f"du/dr error [{xlim_mm[0]} < r < {xlim_mm[1]} mm]")
     else:
         ax2.set_title("du/dr error")
-    finish_axes(ax2, xlim_mm=xlim_mm, fig=fig2)
-    
-    # Add text labels at top of plot (in data coordinates)
-    ymin, ymax = ax2.get_ylim()
-    y_text = (ymax + ymin) * 0.5
-    ax2.text(r0_mm, y_text, " r₀", ha="right", va="top", fontsize=10, color="0.6")
-    ax2.text(r1_mm, y_text, " r₁", ha="right", va="top", fontsize=10, color="0.6")
-    ax2.text(r2_mm, y_text, " r₂", ha="right", va="top", fontsize=10, color="0.6")
+    finish_axes(ax2, r_min_mm=r_min * 1000.0, r_max_mm=r_max * 1000.0, r0_mm=r0_mm, r1_mm=r1_mm, r2_mm=r2_mm, fig=fig2)
     fig2.savefig(out_path_err, dpi=SAVE_DPI, format=SAVE_FORMAT )
     plt.close(fig2)
 
@@ -674,13 +606,14 @@ def plot_flux_vs_r(save_dir, params, coeffs, src_proxy, xlim_mm=None):
 
     # crop to (r0, r2)
     r_num = arc
-    mask_volume = (r_num > r0) & (r_num < r2)
+    r_min , r_max = _get_x_range_for_mask(xlim_mm, r0, r2)
+    mask_volume = (r_num > r_min) & (r_num < r_max)
     r_num = r_num[mask_volume]
     flux_num = flux_num[mask_volume]
 
 
     # --- analytic continuous curve on dense grid (for smooth line) ---
-    r_grid = np.linspace(r0, r2, 2000)
+    r_grid = np.linspace(r_min, r_max, 2000)
     flux_ana = np.empty_like(r_grid)
     mask_v1 = r_grid <= r1
     flux_ana[mask_v1]  = sigma1 * A1 / (r_grid[mask_v1]**2)
@@ -705,10 +638,6 @@ def plot_flux_vs_r(save_dir, params, coeffs, src_proxy, xlim_mm=None):
     ax.plot(r_grid_mm, flux_ana, color=COLOR_ANALYTICAL, label="Analytical")
     ax.plot(r_num_mm, flux_num, linestyle="None", marker="o", markersize=1, color=COLOR_NUMERICAL, label="Numerical")
 
-    ax.axvline(r0_mm, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
-    ax.axvline(r1_mm, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
-    ax.axvline(r2_mm, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
-
     ax.set_xlabel("r [mm]")
     ax.set_ylabel("J_r [A/m²]")
     if xlim_mm is not None:
@@ -716,16 +645,7 @@ def plot_flux_vs_r(save_dir, params, coeffs, src_proxy, xlim_mm=None):
     else:
         ax.set_title("Radial current density, J_r")
     
-    finish_axes(ax, xlim_mm=xlim_mm, fig=fig)
-    
-    # Add text labels at top of plot (in data coordinates)
-    ymin, ymax = ax.get_ylim()
-    y_text = (ymax + ymin) * 0.5 
-
-    ax.text(r0_mm, y_text, " r₀", ha="right", va="top", fontsize=10, color="0.6")
-    ax.text(r1_mm, y_text, " r₁", ha="right", va="top", fontsize=10, color="0.6")
-    ax.text(r2_mm, y_text, " r₂", ha="right", va="top", fontsize=10, color="0.6")
-
+    finish_axes(ax, r_min_mm=r_min * 1000.0, r_max_mm=r_max * 1000.0, r0_mm=r0_mm, r1_mm=r1_mm, r2_mm=r2_mm, fig=fig)
     fig.savefig(out_path, dpi=SAVE_DPI, format=SAVE_FORMAT )
     plt.close(fig)
 
@@ -750,12 +670,13 @@ def plot_d2u_dr2_vs_r(save_dir, params, coeffs, src_proxy, xlim_mm=None):
 
     # strict crop to (r0, r2)
     r_num = arc
-    mask = (r_num > r0) & (r_num < r2)
+    r_min, r_max = _get_x_range_for_mask(xlim_mm, r0, r2)
+    mask = (r_num > r_min) & (r_num < r_max)
     r_num = r_num[mask]
     d2u_dr2_num = d2u_dr2_num[mask]
 
     # --- analytic on dense grid (piecewise) ---
-    r_grid = np.linspace(r0, r2, 2000)
+    r_grid = np.linspace(r_min, r_max, 2000)
     d2u_dr2_ana = np.empty_like(r_grid)
     mask_v1 = r_grid <= r1
     # u=A/r+B => du/dr=-A/r^2 => d2u/dr2 = 2A/r^3
@@ -781,10 +702,6 @@ def plot_d2u_dr2_vs_r(save_dir, params, coeffs, src_proxy, xlim_mm=None):
     ax.plot(r_grid_mm, d2u_dr2_ana, color=COLOR_ANALYTICAL, label="Analytical")
     ax.plot(r_num_mm, d2u_dr2_num, linestyle="None", marker="o", markersize=1, color=COLOR_NUMERICAL, label="Numerical")
 
-    ax.axvline(r0_mm, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
-    ax.axvline(r1_mm, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
-    ax.axvline(r2_mm, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
-
     ax.set_xlabel("r [mm]")
     ax.set_ylabel("d²u/dr² [V/m²]")  # x is mm only; field is still in SI
     if xlim_mm is not None:
@@ -792,14 +709,8 @@ def plot_d2u_dr2_vs_r(save_dir, params, coeffs, src_proxy, xlim_mm=None):
     else:
         ax.set_title("Second derivative, d²u/dr²") 
 
-    finish_axes(ax, xlim_mm=xlim_mm, fig=fig)
+    finish_axes(ax, r_min_mm=r_min * 1000.0, r_max_mm=r_max * 1000.0, r0_mm=r0_mm, r1_mm=r1_mm, r2_mm=r2_mm, fig=fig)
     
-    # Add text labels at top of plot (in data coordinates)
-    ymin, ymax = ax.get_ylim()
-    y_text = (ymax + ymin) * 0.5 
-    ax.text(r0_mm, y_text, " r₀", ha="right", va="top", fontsize=10, color="0.6")
-    ax.text(r1_mm, y_text, " r₁", ha="right", va="top", fontsize=10, color="0.6")
-    ax.text(r2_mm, y_text, " r₂", ha="right", va="top", fontsize=10, color="0.6")
     
     fig.savefig(out_path, dpi=SAVE_DPI, format=SAVE_FORMAT)
     plt.close(fig)
@@ -824,7 +735,8 @@ def plot_laplacian_vs_r(save_dir, params, src_proxy, xlim_mm=None):
 
     # strict crop to (r0, r2)
     r_num = arc
-    mask = (r_num > r0) & (r_num < r2)
+    r_min , r_max = _get_x_range_for_mask(xlim_mm, r0, r2)
+    mask = (r_num > r_min) & (r_num < r_max)
     r_num = r_num[mask]
     lap_num = lap_num[mask]
 
@@ -848,10 +760,6 @@ def plot_laplacian_vs_r(save_dir, params, src_proxy, xlim_mm=None):
     
     ax.plot(r_num_mm, lap_num, linestyle="-", marker="o", markersize=1, color=COLOR_NUMERICAL, label="Numerical", zorder=2)
 
-    ax.axvline(r0_mm, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
-    ax.axvline(r1_mm, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
-    ax.axvline(r2_mm, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES)
-
     ax.set_xlabel("r [mm]")
     ax.set_ylabel("∇²u [V/m²]")  # assuming your PV expression yields V/m²
     if xlim_mm is not None:
@@ -859,15 +767,8 @@ def plot_laplacian_vs_r(save_dir, params, src_proxy, xlim_mm=None):
     else:
         ax.set_title("Laplacian, ∇²u")
 
-    finish_axes(ax, xlim_mm=xlim_mm, fig=fig)
+    finish_axes(ax, r_min_mm=r_min * 1000.0, r_max_mm=r_max * 1000.0, r0_mm=r0_mm, r1_mm=r1_mm, r2_mm=r2_mm, fig=fig)
     
-    # Add text labels at top of plot (in data coordinates)
-    ymin, ymax = ax.get_ylim()
-    y_text = (ymax + ymin) * 0.5 
-    ax.text(r0_mm, y_text, " r₀", ha="right", va="top", fontsize=10, color="0.6")
-    ax.text(r1_mm, y_text, " r₁", ha="right", va="top", fontsize=10, color="0.6")
-    ax.text(r2_mm, y_text, " r₂", ha="right", va="top", fontsize=10, color="0.6")
-
     fig.savefig(out_path, dpi=SAVE_DPI, format=SAVE_FORMAT )
     plt.close(fig)
 
