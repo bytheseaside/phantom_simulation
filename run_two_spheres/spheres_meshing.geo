@@ -20,12 +20,11 @@ r2_surfaces[] = { 3 }; // r2 = 83.20 mm
 
 Mesh.ElementOrder = 2;
 Mesh.HighOrderOptimize = 1;
-Mesh.SecondOrderLinear = 1;
+Mesh.SecondOrderLinear = 0;
 
-Mesh.CharacteristicLengthMin = 0.0005;  // 0.5 mm
-Mesh.CharacteristicLengthMax = 0.0015;   // 1.5 mm
+Mesh.CharacteristicLengthMin = 0.0004;  // 0.4 mm
+Mesh.CharacteristicLengthMax = 0.0012;   // 1.2 mm
 
-Mesh.MeshSizeFromCurvature = 25;
 Mesh.Optimize = 1;
 Mesh.OptimizeNetgen = 1;
 Mesh.Smoothing = 10;

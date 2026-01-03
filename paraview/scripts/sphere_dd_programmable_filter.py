@@ -26,8 +26,7 @@ sigma2 = get_param("sigma2")
 V0 = get_param("V0")
 V2 = get_param("V2")
 
-epsilon = 1e-12 # small value to avoid division by zero
-
+epsilon = np.finfo(float).eps
 # ============================================================================
 # ANALYTICAL SOLUTION COEFFICIENTS
 # ============================================================================
