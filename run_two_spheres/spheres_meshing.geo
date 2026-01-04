@@ -3,7 +3,6 @@ General.Terminal = 1;
 
 Merge StrCat(GetEnv("XAO_PATH"));
 vi[] = Volume{:}; si[] = Surface{:};
-Printf(">> Config 1: FINE UNIFORM");
 Printf(">> Loaded geometry: Volumes=%g, Surfaces=%g", #vi[], #si[]);
 
 //* Volumes
@@ -18,8 +17,8 @@ Mesh.ElementOrder = 2;
 Mesh.SecondOrderLinear = 2;
 Mesh.Optimize = 1;
 Mesh.Smoothing = 10;
-Mesh.CharacteristicLengthMin = 0.0007;
-Mesh.CharacteristicLengthMax = 0.001;
+Mesh.CharacteristicLengthMin = 0.0008;
+Mesh.CharacteristicLengthMax = 0.0013;
 
 Physical Volume("int", 1) = { int_vol_id[] };
 Physical Volume("ext", 2) = { ext_vol_id[] };
