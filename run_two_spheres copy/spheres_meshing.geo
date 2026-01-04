@@ -1,6 +1,3 @@
-// ============================================================================
-// CONFIG 1
-// ============================================================================
 SetFactory("OpenCASCADE");
 General.Terminal = 1;
 
@@ -17,17 +14,12 @@ r0_surfaces[] = { 2 }; // r0 = 2 mm
 r1_surfaces[] = { 1 }; // r1 = 80 mm
 r2_surfaces[] = { 3 }; // r2 = 83.20 mm
 
-
 Mesh.ElementOrder = 2;
-Mesh.HighOrderOptimize = 1;
-Mesh.SecondOrderLinear = 0;
-
-Mesh.CharacteristicLengthMin = 0.0004;  // 0.4 mm
-Mesh.CharacteristicLengthMax = 0.0012;   // 1.2 mm
-
+Mesh.SecondOrderLinear = 2;
 Mesh.Optimize = 1;
-Mesh.OptimizeNetgen = 1;
 Mesh.Smoothing = 10;
+Mesh.CharacteristicLengthMin = 0.0007;
+Mesh.CharacteristicLengthMax = 0.001;
 
 Physical Volume("int", 1) = { int_vol_id[] };
 Physical Volume("ext", 2) = { ext_vol_id[] };
@@ -38,4 +30,4 @@ Physical Surface("r2", 4) = { r2_surfaces[] };
 Mesh 3;
 Mesh.MshFileVersion = 4.1;
 Save StrCat(GetEnv("OUT_PATH"));
-Printf(">> Mesh written: CONFIG 1");
+Printf(">> Mesh written");

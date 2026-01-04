@@ -61,16 +61,50 @@ sp[] = Surface{:};
 Printf(">> Geometry processed: Volumes=%g, Surfaces=%g", #vp[], #sp[]);
 
 // 2) Global mesh parameters
-Mesh.ElementOrder = 2;                  // Use 2nd-order tetrahedra (quadratic elements)
-Mesh.HighOrderOptimize = 1;             // Basic optimization
-Mesh.SecondOrderLinear = 0;             // Use curved elements
-Mesh.CharacteristicLengthMin = 0.0004;  // 0.4 mm
-Mesh.CharacteristicLengthMax = 0.0012;   // 1.2 mm
+shell_boundary_surfaces[] = Boundary{ Volume{shell_volume_ids[]}; };
 
+Field[1] = Distance;
+Field[1].SurfacesList = {shell_boundary_surfaces[]};
+
+Field[2] = Threshold;
+Field[2].InField = 1;
+Field[2].SizeMin = 0.0005;     
+Field[2].SizeMax = 0.003;        
+Field[2].DistMin = 0.001;      
+Field[2].DistMax = 0.008;  
+
+
+all_electrode_surfaces[] = {
+    e1_tip[], e1_ring[], e1_sleeve[],
+    e2_tip[], e2_ring[], e2_sleeve[],
+    e3_tip[], e3_ring[], e3_sleeve[],
+    e4_tip[], e4_ring[], e4_sleeve[],
+    e5_tip[], e5_ring[], e5_sleeve[],
+    e6_tip[], e6_ring[], e6_sleeve[],
+    e7_tip[], e7_ring[], e7_sleeve[],
+    e8_tip[], e8_ring[], e8_sleeve[],
+    e9_tip[], e9_ring[], e9_sleeve[]
+};
+
+Field[3] = Distance;
+Field[3].SurfacesList = {all_electrode_surfaces[]};
+
+Field[4] = Threshold;
+Field[4].InField = 3;
+Field[4].SizeMin = 0.0003;      
+Field[4].SizeMax = 0.002;        
+Field[4].DistMin = 0.0005;       
+Field[4].DistMax = 0.003;        
+
+
+Field[5] = Min;
+Field[5].FieldsList = {2, 4};
+
+Background Field = 5;
+Mesh.ElementOrder = 2;
+Mesh.SecondOrderLinear = 2;
 Mesh.Optimize = 1;
-Mesh.OptimizeNetgen = 1;
 Mesh.Smoothing = 10;
-
 
 // 3) Physical groups used in solver
 Physical Volume("shell", 1) = { shell_volume_ids[] };
