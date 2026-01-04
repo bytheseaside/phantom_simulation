@@ -16,7 +16,7 @@ import csv
 
 # Plot settings
 BIN_COUNT = 10              # Number of bins for histogram
-POL_RESOLUTION = 1000        # Points in plots
+POL_RESOLUTION = 175        # Points in plots
 
 # Save settings
 SAVE_PATH_BASE = '/Users/brisarojas/Desktop/phantom_simulation/paraview/plots/'  # Output directory
@@ -28,14 +28,22 @@ FIGSIZE = (14, 7)
 GRID_ALPHA = 0.3
 
 # Color scheme
-COLOR_ANALYTICAL = '#6A8EDB'   # Purple-ish blue
-COLOR_NUMERICAL = '#F77F00'    # Orange
-COLOR_ERROR = '#2A9D8F'        # Teal/cyan-green
-COLOR_VOLUME1 = '#66C2A5'      # Soft green (inner sphere)
-COLOR_VOLUME2 = '#8DA0CB'      # Soft blue-purple (outer sphere)
+COLOR_ANALYTICAL = '#ff7f0e'  
+COLOR_NUMERICAL = '#1f77b4'    
+COLOR_ERROR = '#556B2F'        # Dark olive green (stronger)
+COLOR_VOLUME1 = '#1f77b4'      # Blue (inner sphere)
+COLOR_VOLUME2 = '#ff7f0e'      # Orange (outer sphere)
 COLOR_REFLINES = '0.2'         # Gray for reference lines (r0, r1, r2)
-REFLINE_WIDTH = 0.7              # Width of reference lines
+
+# Line and marker styles
+REFLINE_WIDTH = 0.7            # Width of reference lines
 REFLINE_STYLE = '--'           # Dashed style for reference lines
+NUMERICAL_MARKER = 'o'         # Marker style for numerical data ('x', '+', '*', 's', etc.)
+NUMERICAL_MARKERSIZE = 3      # Size of numerical data markers
+NUMERICAL_LINESTYLE = ':'      # Line style connecting numerical points (dotted)
+NUMERICAL_LINEWIDTH = 1.0      # Width of numerical interpolation line
+ERROR_LINESTYLE = ':'          # Line style for error plots (dotted)
+ERROR_LINEWIDTH = 1.0          # Width of error line
 
 # ============================================================================
 # HELPER FUNCTIONS
@@ -202,7 +210,7 @@ def plot_u_vs_r(save_dir, params, coeffs, src_proxy, show_error=True, xlim_mm=No
     fig, ax = plt.subplots(figsize=FIGSIZE)
 
     ax.plot(r_grid_mm, u_ana, color=COLOR_ANALYTICAL, label="Analytical")
-    ax.plot(r_num_mm, u_num, linestyle="None", marker="o", markersize=1, color=COLOR_NUMERICAL, label="Numerical")
+    ax.plot(r_num_mm, u_num, linestyle=NUMERICAL_LINESTYLE, linewidth=NUMERICAL_LINEWIDTH, marker=NUMERICAL_MARKER, markersize=NUMERICAL_MARKERSIZE, color=COLOR_NUMERICAL, label="Numerical")
 
     if show_error:
         # also plot error as shaded area
@@ -210,7 +218,7 @@ def plot_u_vs_r(save_dir, params, coeffs, src_proxy, show_error=True, xlim_mm=No
         err_abs = err_abs[mask_volume]
         ax.plot(
             r_num_mm, err_abs,
-            linestyle=":", linewidth=0.8, marker="o", markersize=1,
+            linestyle=ERROR_LINESTYLE, linewidth=ERROR_LINEWIDTH, marker=NUMERICAL_MARKER, markersize=NUMERICAL_MARKERSIZE,
             color=COLOR_ERROR,
             label="Absolute error"
         )
@@ -267,7 +275,7 @@ def plot_u_errors(save_dir, params, src_proxy, xlim_mm=None):
     
     fig, ax = plt.subplots(figsize=FIGSIZE)
 
-    ax.plot(r_mm, err_abs, linestyle=":", linewidth=0.8, marker="o", markersize=1, color=COLOR_ERROR, label="Absolute error")
+    ax.plot(r_mm, err_abs, linestyle=ERROR_LINESTYLE, linewidth=ERROR_LINEWIDTH, marker=NUMERICAL_MARKER, markersize=NUMERICAL_MARKERSIZE, color=COLOR_ERROR, label="Absolute error")
 
 
     ax.set_xlabel("r [mm]")
@@ -291,7 +299,7 @@ def plot_u_errors(save_dir, params, src_proxy, xlim_mm=None):
     
     fig, ax = plt.subplots(figsize=FIGSIZE)
 
-    ax.plot(r_mm, err_rel, linestyle=":", linewidth=0.8, marker="o", markersize=1, color=COLOR_ERROR, label="Relative error")
+    ax.plot(r_mm, err_rel, linestyle=ERROR_LINESTYLE, linewidth=ERROR_LINEWIDTH, marker=NUMERICAL_MARKER, markersize=NUMERICAL_MARKERSIZE, color=COLOR_ERROR, label="Relative error")
 
 
     ax.set_xlabel("r [mm]")
@@ -439,8 +447,8 @@ def plot_err_abs_histogram(
     )
 
     for x in (p50, p99):
-        ax.axvline(x, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color=COLOR_REFLINES, alpha=0.6)
-        ax.text(x, ax.get_ylim()[1]*0.9, f"p{50 if x == p50 else 99}", rotation=90, va="top", ha="right", fontsize=8, color="0.5")
+        ax.axvline(x, linestyle=REFLINE_STYLE, linewidth=REFLINE_WIDTH, color='0.0', alpha=0.8)
+        ax.text(x, ax.get_ylim()[1]*0.9, f"p{50 if x == p50 else 99}", rotation=90, va="top", ha="right", fontsize=8, color='0.0', fontweight='bold')
     ax.set_title(f"Absolute error distribution - N={N} {title_suffix} ")
     ax.set_xlabel("|error| [V]")
     ax.set_ylabel("point fraction")
@@ -542,7 +550,7 @@ def plot_du_dr_vs_r(save_dir, params, coeffs, src_proxy, xlim_mm=None):
     fig, ax = plt.subplots(figsize=FIGSIZE)
 
     ax.plot(r_grid_mm, du_dr_ana, color=COLOR_ANALYTICAL, label="Analytical")
-    ax.plot(r_num_mm, du_dr_num, linestyle="None", marker="o", markersize=1, color=COLOR_NUMERICAL, label="Numerical")
+    ax.plot(r_num_mm, du_dr_num, linestyle=NUMERICAL_LINESTYLE, linewidth=NUMERICAL_LINEWIDTH, marker=NUMERICAL_MARKER, markersize=NUMERICAL_MARKERSIZE, color=COLOR_NUMERICAL, label="Numerical")
 
 
     ax.set_xlabel("r [mm]")
@@ -568,8 +576,8 @@ def plot_du_dr_vs_r(save_dir, params, coeffs, src_proxy, xlim_mm=None):
 
     ax2.plot(
         r_num_mm, err_abs_du_dr,
-        linestyle=":", linewidth=0.8,
-        marker="o", markersize=1,
+        linestyle=ERROR_LINESTYLE, linewidth=ERROR_LINEWIDTH,
+        marker=NUMERICAL_MARKER, markersize=NUMERICAL_MARKERSIZE,
         color=COLOR_ERROR,
         label="Absolute error"
     )
@@ -637,7 +645,7 @@ def plot_flux_vs_r(save_dir, params, coeffs, src_proxy, xlim_mm=None):
     fig, ax = plt.subplots(figsize=FIGSIZE)
 
     ax.plot(r_grid_mm, flux_ana, color=COLOR_ANALYTICAL, label="Analytical")
-    ax.plot(r_num_mm, flux_num, linestyle="None", marker="o", markersize=1, color=COLOR_NUMERICAL, label="Numerical")
+    ax.plot(r_num_mm, flux_num, linestyle=NUMERICAL_LINESTYLE, linewidth=NUMERICAL_LINEWIDTH, marker=NUMERICAL_MARKER, markersize=NUMERICAL_MARKERSIZE, color=COLOR_NUMERICAL, label="Numerical")
 
     ax.set_xlabel("r [mm]")
     ax.set_ylabel("J_r [A/m²]")
@@ -701,7 +709,7 @@ def plot_d2u_dr2_vs_r(save_dir, params, coeffs, src_proxy, xlim_mm=None):
     fig, ax = plt.subplots(figsize=FIGSIZE)
 
     ax.plot(r_grid_mm, d2u_dr2_ana, color=COLOR_ANALYTICAL, label="Analytical")
-    ax.plot(r_num_mm, d2u_dr2_num, linestyle="None", marker="o", markersize=1, color=COLOR_NUMERICAL, label="Numerical")
+    ax.plot(r_num_mm, d2u_dr2_num, linestyle=NUMERICAL_LINESTYLE, linewidth=NUMERICAL_LINEWIDTH, marker=NUMERICAL_MARKER, markersize=NUMERICAL_MARKERSIZE, color=COLOR_NUMERICAL, label="Numerical")
 
     ax.set_xlabel("r [mm]")
     ax.set_ylabel("d²u/dr² [V/m²]")  # x is mm only; field is still in SI
@@ -759,7 +767,7 @@ def plot_laplacian_vs_r(save_dir, params, src_proxy, xlim_mm=None):
     # Analytical solution: Laplacian should be zero everywhere 
     ax.hlines(0, r_min * 1000.0, r_max * 1000.0, linestyle="-", linewidth=1.5, color=COLOR_ANALYTICAL, label="Analytical", zorder=1)
     
-    ax.plot(r_num_mm, lap_num, linestyle="-", marker="o", markersize=1, color=COLOR_NUMERICAL, label="Numerical", zorder=2)
+    ax.plot(r_num_mm, lap_num, linestyle=NUMERICAL_LINESTYLE, linewidth=NUMERICAL_LINEWIDTH, marker=NUMERICAL_MARKER, markersize=NUMERICAL_MARKERSIZE, color=COLOR_NUMERICAL, label="Numerical", zorder=2)
 
     ax.set_xlabel("r [mm]")
     ax.set_ylabel("∇²u [V/m²]")  # assuming your PV expression yields V/m²
@@ -815,11 +823,13 @@ def main():
     # Convert to mm for xlim
     r1_mm = r1 * 1000.0
     r2_mm = r2 * 1000.0
+    r0_mm = r0 * 1000.0
     
     # Define regions of interest
     lateral_pad_mm = 1.0  # padding around interfaces
     xlim_outer_region = (r1_mm - lateral_pad_mm, r2_mm + lateral_pad_mm )  # r1-r2 region with left padding
-    xlim_r1_interface = (r1_mm - lateral_pad_mm, r1_mm + lateral_pad_mm)  # Around r1 interface
+    xlim_r1_interface = (r1_mm - lateral_pad_mm, r1_mm + lateral_pad_mm)  # Around r1 interface\
+    xlim_r0_interface = (r0_mm, r0_mm + lateral_pad_mm)  # Around r0 interface
     
     print("=" * 60)
     print("GENERATING PLOTS")
@@ -836,7 +846,7 @@ def main():
         params=params,
         coeffs=coeffs,
         src_proxy=ds_src,
-        show_error=True,
+        show_error=False,
     )
     
     # Outer region (r1-r2 with padding)
@@ -912,6 +922,15 @@ def main():
         src_proxy=ds_src,
         xlim_mm=xlim_r1_interface
     )
+
+    # Around r0 interface (to check continuity)
+    plot_du_dr_vs_r(
+        save_dir=save_dir,
+        params=params,
+        coeffs=coeffs,
+        src_proxy=ds_src,
+        xlim_mm=xlim_r0_interface
+    )
     
     # ========================================================================
     # 5. FLUX PLOTS (J_r) - Check continuity at r1
@@ -926,7 +945,7 @@ def main():
         src_proxy=ds_src,
     )
     
-    # Around r1 interface (to check continuity)
+    # Around r1 interface (to check gradient because of refinement)
     plot_flux_vs_r(
         save_dir=save_dir,
         params=params,
