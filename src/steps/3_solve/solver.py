@@ -17,7 +17,8 @@ from mpi4py import MPI
 from petsc4py import PETSc
 
 from dolfinx import fem
-from dolfinx.io import gmshio, XDMFFile
+from dolfinx.io import XDMFFile
+from dolfinx.io.gmsh import read_from_msh
 from dolfinx.fem.petsc import LinearProblem
 import ufl
 
@@ -112,8 +113,8 @@ def write_output_files(
     with XDMFFile(MPI.COMM_SELF, str(output_path), "w") as xdmf:
         xdmf.write_mesh(mesh)
         xdmf.write_function(u)
-        # xdmf.write_meshtags(cell_tags, mesh.geometry)
-        # xdmf.write_meshtags(facet_tags, mesh.geometry)        
+        xdmf.write_meshtags(cell_tags, mesh.geometry)
+        xdmf.write_meshtags(facet_tags, mesh.geometry)        
 
 # --------------------------------------------------------------------------------------
 # Main solver routine
@@ -180,7 +181,10 @@ def main():
     manifest.resolve_with_mesh(mesh_data.field_data)
     # Read mesh
     print("Reading mesh...")
-    mesh, cell_tags, facet_tags = gmshio.read_from_msh(str(mesh_path), MPI.COMM_SELF, 0)
+    mesh_io_data = read_from_msh(str(mesh_path), MPI.COMM_SELF, 0)
+    mesh = mesh_io_data.mesh
+    cell_tags = mesh_io_data.cell_tags
+    facet_tags = mesh_io_data.facet_tags
 
     print("Building conductivity distribution...")
     
@@ -229,7 +233,8 @@ def main():
         try:
             problem = LinearProblem(
                 a, L, bcs=bcs,
-                petsc_options={"ksp_type": "cg", "pc_type": "gamg", "ksp_rtol": 1e-12}
+                petsc_options={"ksp_type": "cg", "pc_type": "gamg", "ksp_rtol": 1e-12},
+                petsc_options_prefix=f"case_{case_idx}_"
             )
             uh = problem.solve()
             uh.name = "u"

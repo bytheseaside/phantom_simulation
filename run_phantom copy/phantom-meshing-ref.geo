@@ -62,11 +62,46 @@ Printf(">> Geometry processed: Volumes=%g, Surfaces=%g", #vp[], #sp[]);
 
 // 2) Global mesh parameters
 Mesh.ElementOrder = 2;
-Mesh.SecondOrderLinear = 2;
+Mesh.SecondOrderLinear = 0; 
 Mesh.Optimize = 1;
 Mesh.Smoothing = 10;
-Mesh.CharacteristicLengthMin = 0.001;
-Mesh.CharacteristicLengthMax = 0.0015;
+Mesh.CharacteristicLengthMin = 0.0003;  // Safety min ~0.3mm
+Mesh.CharacteristicLengthMax = 0.006;   // Safety max ~6mm
+// ============================================================
+// Size Field: Refine near electrode surfaces
+// ============================================================
+
+// Collect all electrode surfaces
+all_electrodes[] = { 
+    e1_tip[], e1_ring[], e1_sleeve[],
+    e2_tip[], e2_ring[], e2_sleeve[],
+    e3_tip[], e3_ring[], e3_sleeve[],
+    e4_tip[], e4_ring[], e4_sleeve[],
+    e5_tip[], e5_ring[], e5_sleeve[],
+    e6_tip[], e6_ring[], e6_sleeve[],
+    e7_tip[], e7_ring[], e7_sleeve[],
+    e8_tip[], e8_ring[], e8_sleeve[],
+    e9_tip[], e9_ring[], e9_sleeve[]
+};
+
+// Distance field from electrode surfaces
+Field[1] = Distance;
+Field[1].SurfacesList = { all_electrodes[] };
+
+// Threshold: fine near electrodes, coarse far away
+Field[2] = Threshold;
+Field[2].InField = 1;
+Field[2].SizeMin = 0.0004;   // 0.4mm at electrode surfaces
+Field[2].SizeMax = 0.005;    // 5mm far from electrodes
+Field[2].DistMin = 0.003;    // Fine mesh within 3mm of electrodes
+Field[2].DistMax = 0.025;    // Transition complete by 25mm
+
+// Use as background field
+Background Field = 2;
+
+Mesh.CharacteristicLengthFromPoints = 0;
+Mesh.CharacteristicLengthExtendFromBoundary = 0;
+
 
 // 3) Physical groups used in solver
 Physical Volume("shell", 1) = { shell_volume_ids[] };
