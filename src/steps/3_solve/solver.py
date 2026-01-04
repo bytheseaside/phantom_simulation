@@ -112,8 +112,8 @@ def write_output_files(
     with XDMFFile(MPI.COMM_SELF, str(output_path), "w") as xdmf:
         xdmf.write_mesh(mesh)
         xdmf.write_function(u)
-        xdmf.write_meshtags(cell_tags, mesh.geometry)
-        xdmf.write_meshtags(facet_tags, mesh.geometry)        
+        # xdmf.write_meshtags(cell_tags, mesh.geometry)
+        # xdmf.write_meshtags(facet_tags, mesh.geometry)        
 
 # --------------------------------------------------------------------------------------
 # Main solver routine

@@ -17,8 +17,8 @@ Mesh.ElementOrder = 2;
 Mesh.SecondOrderLinear = 2;
 Mesh.Optimize = 1;
 Mesh.Smoothing = 10;
-Mesh.CharacteristicLengthMin = 0.0008;
-Mesh.CharacteristicLengthMax = 0.0013;
+Mesh.CharacteristicLengthMin = 0.001;
+Mesh.CharacteristicLengthMax = 0.0015;
 
 Physical Volume("int", 1) = { int_vol_id[] };
 Physical Volume("ext", 2) = { ext_vol_id[] };
