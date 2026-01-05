@@ -191,6 +191,8 @@ def save_correlation_heatmap(corr_matrix, case_names, output_path: Path, *, anno
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--matrix', type=Path, required=True, help='Path to F_matrix.npy')
+    ap.add_argument('--files', nargs='+', default=None,
+                    help='Original file paths used to build the matrix (for case name extraction)')
     ap.add_argument('--out', type=Path, default=Path('analysis_results'), 
                     help='Output directory')
     grp = ap.add_mutually_exclusive_group()
@@ -223,17 +225,14 @@ def main():
     print("\nComputing correlation matrix...")
     corr_matrix = compute_correlation_matrix(f_matrix)
 
-    # Load case names and probe names from metadata.json (created by build_f_matrix.py)
-    metadata_path = args.matrix.parent / "metadata.json"
+    # Extract case names from provided files or use generic names
     probe_names = None
-    if metadata_path.exists():
-        with metadata_path.open('r') as f:
-            metadata = json.load(f)
-            case_names = metadata.get('cases', [f"case_{i}" for i in range(f_matrix.shape[1])])
-            # Try to get probe names from metadata (may not exist in older versions)
-            probe_names = metadata.get('probe_names', None)
+    if args.files:
+        # Extract case names from file names (remove directory path and .npy extension)
+        case_names = [Path(f).stem for f in args.files]
+        print(f"  Extracted case names from {len(case_names)} files")
     else:
-        print(f"  WARNING: metadata.json not found at {metadata_path}, using generic case names")
+        print(f"  No files provided, using generic case names")
         case_names = [f"case_{i}" for i in range(f_matrix.shape[1])]
     
     # Save correlation heatmap
