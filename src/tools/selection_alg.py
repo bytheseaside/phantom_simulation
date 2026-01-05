@@ -110,9 +110,11 @@ def greedy_condition(F: np.ndarray, min_cols: int, names: list) -> dict:
     # Initial state
     F_current = F.copy()
     history.append(compute_metrics(F_current))
+    initial_cond = history[0]['condition_number']
     
     while len(current_indices) > min_cols:
-        best_cond = float('inf')
+        # Start with current condition number - only remove if it improves or maintains κ
+        best_cond = initial_cond
         best_to_remove = None
         
         # Try removing each column
@@ -451,33 +453,34 @@ def hybrid_condition_correlation(F: np.ndarray, min_cols: int, names: list) -> d
     while len(current_indices) > min_cols:
         n = F_current.shape[1]
         corr = compute_correlation_matrix(F_current)
-        
-        best_score = float('inf')
+
+        best_score = float('-inf')
         best_to_remove = None
-        
+
         for i in range(n):
             # Condition improvement
             mask = np.ones(n, dtype=bool)
             mask[i] = False
             F_test = F_current[:, mask]
             new_cond = compute_condition_number(F_test)
-            cond_improvement = current_cond - new_cond  # positive = better
-            
-            # Correlation penalty (how correlated is this column?)
+            cond_improvement = current_cond - new_cond
+
+            # Correlation score (how correlated is this column with others?)
             mean_corr_i = np.mean(np.abs([corr[i, j] for j in range(n) if j != i]))
-            
-            # Combined score (lower is better to remove)
-            # We want high correlation and low condition improvement
-            score = -alpha * cond_improvement + (1 - alpha) * mean_corr_i
-            
-            if score < best_score:
+
+            # Combined score: HIGHER is better to remove
+            # - High cond_improvement (removing improves κ) → good to remove
+            # - High mean_corr_i (column is redundant) → good to remove
+            score = alpha * cond_improvement + (1 - alpha) * mean_corr_i
+
+            if score > best_score:
                 best_score = score
                 best_to_remove = i
-        
+
         removed_idx = current_indices[best_to_remove]
         removed_name = current_names[best_to_remove]
         removed.append({'index': removed_idx, 'name': removed_name})
-        
+
         # Update
         mask = np.ones(n, dtype=bool)
         mask[best_to_remove] = False
@@ -485,7 +488,7 @@ def hybrid_condition_correlation(F: np.ndarray, min_cols: int, names: list) -> d
         current_indices = [idx for j, idx in enumerate(current_indices) if mask[j]]
         current_names = [name for j, name in enumerate(current_names) if mask[j]]
         current_cond = compute_condition_number(F_current)
-        
+
         history.append(compute_metrics(F_current))
     
     selected = [{'index': idx, 'name': name} for idx, name in zip(current_indices, current_names)]
@@ -597,8 +600,8 @@ def plot_selection_history(history: list, algorithm: str, output_dir: Path):
     fig, ax = plt.subplots(figsize=FIGSIZE)
     ax.plot(n_cols, max_corrs, 'o-', color=COLOR_SECONDARY, linewidth=LINEWIDTH, 
             markersize=MARKERSIZE, markeredgecolor='white', markeredgewidth=1)
-    ax.set_xlabel('Number of Columns', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Max |Correlation|', fontsize=12, fontweight='bold')
+    ax.set_xlabel('Number of Columns', fontsize=12)
+    ax.set_ylabel('Max |Correlation|', fontsize=12)
     ax.set_title(f'Selection Algorithm: {algo_name} — Case Correlation', 
                  fontsize=14, fontweight='bold')
     ax.set_ylim(0, 1.05)
@@ -613,8 +616,8 @@ def plot_selection_history(history: list, algorithm: str, output_dir: Path):
     fig, ax = plt.subplots(figsize=FIGSIZE)
     ax.plot(n_cols, max_cohs, 'o-', color=COLOR_TERTIARY, linewidth=LINEWIDTH, 
             markersize=MARKERSIZE, markeredgecolor='white', markeredgewidth=1)
-    ax.set_xlabel('Number of Columns', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Max |Coherence|', fontsize=12, fontweight='bold')
+    ax.set_xlabel('Number of Columns', fontsize=12)
+    ax.set_ylabel('Max |Coherence|', fontsize=12)
     ax.set_title(f'Selection Algorithm: {algo_name} — Gram Matrix Coherence', 
                  fontsize=14, fontweight='bold')
     ax.set_ylim(0, 1.05)
@@ -629,8 +632,8 @@ def plot_selection_history(history: list, algorithm: str, output_dir: Path):
     fig, ax = plt.subplots(figsize=FIGSIZE)
     ax.plot(n_cols, ranks, 's-', color='#d62728', linewidth=LINEWIDTH, 
             markersize=MARKERSIZE, markeredgecolor='white', markeredgewidth=1)
-    ax.set_xlabel('Number of Columns', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Rank', fontsize=12, fontweight='bold')
+    ax.set_xlabel('Number of Columns', fontsize=12 )
+    ax.set_ylabel('Rank', fontsize=12)
     ax.set_title(f'Selection Algorithm: {algo_name} — Matrix Rank', 
                  fontsize=14, fontweight='bold')
     ax.grid(True, alpha=GRID_ALPHA, linestyle='--')
@@ -640,58 +643,7 @@ def plot_selection_history(history: list, algorithm: str, output_dir: Path):
     plt.tight_layout()
     plt.savefig(output_dir / f'{algorithm}_rank.svg', dpi=DPI, bbox_inches='tight')
     plt.close()
-    
-    # --- Plot 5: Singular Value Span by Iteration ---
-    # Shows the spread (min-max) of singular values at each step
-    # Goal: visualize how the spectrum compresses/expands as columns are removed
-    fig, ax = plt.subplots(figsize=FIGSIZE)
-    
-    sv_min = [h['min_singular_value'] for h in history]
-    sv_max = [h['max_singular_value'] for h in history]
-    sv_all = [h['singular_values'] for h in history]
-    
-    # Compute median and quartiles for each iteration
-    sv_median = [np.median(sv) for sv in sv_all]
-    sv_q25 = [np.percentile(sv, 25) for sv in sv_all]
-    sv_q75 = [np.percentile(sv, 75) for sv in sv_all]
-    
-    # Draw vertical spans (min to max) for each iteration
-    for i, nc in enumerate(n_cols):
-        # Full range line (min to max)
-        ax.plot([nc, nc], [sv_min[i], sv_max[i]], color=COLOR_PRIMARY, 
-                linewidth=3, alpha=0.6, solid_capstyle='round')
-        # IQR box (25th to 75th percentile)
-        ax.plot([nc, nc], [sv_q25[i], sv_q75[i]], color=COLOR_PRIMARY, 
-                linewidth=8, alpha=0.4, solid_capstyle='round')
-        # Median marker
-        ax.plot(nc, sv_median[i], 'o', color=COLOR_SECONDARY, markersize=7, 
-                markeredgecolor='white', markeredgewidth=1, zorder=5)
-    
-    # Connect medians with a line for trend visibility
-    ax.plot(n_cols, sv_median, '--', color=COLOR_SECONDARY, linewidth=1.5, alpha=0.7)
-    
-    ax.set_xlabel('Number of Columns', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Singular Value', fontsize=12, fontweight='bold')
-    ax.set_title(f'Selection Algorithm: {algo_name} — Singular Value Spread by Iteration', 
-                 fontsize=14, fontweight='bold')
-    ax.grid(True, alpha=GRID_ALPHA, linestyle='--')
-    ax.invert_xaxis()
-    ax.tick_params(labelsize=11)
-    
-    # Add legend manually
-    from matplotlib.lines import Line2D
-    legend_elements = [
-        Line2D([0], [0], color=COLOR_PRIMARY, linewidth=3, alpha=0.6, label='Min–Max range'),
-        Line2D([0], [0], color=COLOR_PRIMARY, linewidth=8, alpha=0.4, label='IQR (25–75%)'),
-        Line2D([0], [0], marker='o', color='w', markerfacecolor=COLOR_SECONDARY, 
-               markersize=8, label='Median'),
-    ]
-    ax.legend(handles=legend_elements, fontsize=10, loc='upper left')
-    
-    plt.tight_layout()
-    plt.savefig(output_dir / f'{algorithm}_sv_span.svg', dpi=DPI, bbox_inches='tight')
-    plt.close()
-    
+        
     # --- Plot 6: Final Singular Value Spectrum ---
     # Line plot showing full spectrum of final reduced matrix
     # Goal: check that values descend smoothly (soft slope), not abruptly
@@ -715,8 +667,8 @@ def plot_selection_history(history: list, algorithm: str, output_dir: Path):
             fontsize=12, fontweight='bold', ha='right', va='top',
             bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
     
-    ax.set_xlabel('Singular Value Index', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Singular Value (σ)', fontsize=12, fontweight='bold')
+    ax.set_xlabel('Singular Value Index', fontsize=12)
+    ax.set_ylabel('Singular Value (σ)', fontsize=12)
     ax.set_title(f'Selection Algorithm: {algo_name} — Final Spectrum ({final_n} columns)', 
                  fontsize=14, fontweight='bold')
     ax.grid(True, alpha=GRID_ALPHA, linestyle='--')

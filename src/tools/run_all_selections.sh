@@ -3,7 +3,7 @@
 # Run all column selection algorithms on 9DOF and 18DOF F matrices.
 #
 # Usage:
-#   ./run_all_selections.sh [--min-cols N]
+#   ./run_all_selections.sh
 #
 # Outputs are saved to:
 #   run_phantom/9dof/selection/{algorithm}/
@@ -11,23 +11,6 @@
 #
 
 set -euo pipefail
-
-# Default minimum columns
-MIN_COLS=6
-
-# Parse args
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        --min-cols)
-            MIN_COLS="$2"
-            shift 2
-            ;;
-        *)
-            echo "Unknown option: $1"
-            exit 1
-            ;;
-    esac
-done
 
 # Get script directory and project root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -57,7 +40,6 @@ NAMES_18DOF="E1_R E1_T E2_R E2_T E3_R E3_T E4_R E4_T E5_R E5_T E6_R E6_T E7_R E7
 echo "============================================================"
 echo "Column Selection: Running all algorithms"
 echo "============================================================"
-echo "Min columns: $MIN_COLS"
 echo "Algorithms: ${ALGORITHMS[*]}"
 echo ""
 
@@ -74,7 +56,7 @@ if [[ -f "$MATRIX_9DOF" ]]; then
             --matrix "$MATRIX_9DOF" \
             --names $NAMES_9DOF \
             --algorithm "$algo" \
-            --min-cols "$MIN_COLS" \
+            --min-cols "8" \
             --out "$OUT_DIR" \
             2>&1 | grep -E "(Selected|Removed|condition_number|Saved)" | sed 's/^/    /'
         echo ""
@@ -96,7 +78,7 @@ if [[ -f "$MATRIX_18DOF" ]]; then
             --matrix "$MATRIX_18DOF" \
             --names $NAMES_18DOF \
             --algorithm "$algo" \
-            --min-cols "$MIN_COLS" \
+            --min-cols "12" \
             --out "$OUT_DIR" \
             2>&1 | grep -E "(Selected|Removed|condition_number|Saved)" | sed 's/^/    /'
         echo ""

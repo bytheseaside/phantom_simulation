@@ -8,8 +8,7 @@ Generates:
   3. Consensus ranking (columns ranked by selection frequency)
 
 Usage:
-  python compare_selections.py --dir run_phantom/9dof/selection
-  python compare_selections.py --dir run_phantom/18dof/selection --out comparison.csv
+  python compare_selections.py --dir run_phantom/selection --out comparison.csv
 """
 
 import argparse
@@ -204,8 +203,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s --dir run_phantom/9dof/selection
-  %(prog)s --dir run_phantom/18dof/selection --out comparison.csv
+    %(prog)s --dir run_phantom/selection
         """
     )
     parser.add_argument('--dir', type=Path, required=True,
