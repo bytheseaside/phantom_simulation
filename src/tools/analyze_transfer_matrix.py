@@ -251,8 +251,7 @@ def plot_correlation_heatmap(corr_matrix: np.ndarray, case_names: list, output_p
     
     fig, ax = plt.subplots(figsize=(10, 10), dpi=300)
     
-    # Use diverging purple-to-green colormap (PiYG)
-    im = ax.imshow(mat, cmap='PiYG', vmin=-1, vmax=1, aspect='equal')
+    im = ax.imshow(mat, cmap='RdBu_r', vmin=-1, vmax=1, aspect='equal')
     
     ax.set_xlabel('Case', fontsize=12)
     ax.set_ylabel('Case', fontsize=12)
@@ -279,34 +278,32 @@ def plot_correlation_heatmap(corr_matrix: np.ndarray, case_names: list, output_p
 
 
 def plot_singular_values(singular_values: list, output_path: Path):
-    """Plot singular value spectrum."""
-    s = np.array(singular_values)
+    """Plot singular value spectrum (scree plot)."""
+    s = np.asarray(singular_values)
     n = len(s)
-    
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5), dpi=300)
-    
-    # Linear scale
-    ax1 = axes[0]
-    ax1.bar(range(1, n + 1), s, color='steelblue', edgecolor='navy', alpha=0.8)
-    ax1.set_xlabel(f'σ₁ (largest) → σ{n} (smallest)', fontsize=12)
-    ax1.set_ylabel('Singular Value', fontsize=12)
-    ax1.set_title('Singular Values (Linear)', fontsize=14, fontweight='bold')
-    ax1.set_xticks(range(1, n + 1))
-    ax1.grid(True, alpha=0.3, axis='y')
-    
-    # Log scale
-    ax2 = axes[1]
-    ax2.bar(range(1, n + 1), s, color='steelblue', edgecolor='navy', alpha=0.8)
-    ax2.set_yscale('log')
-    ax2.set_xlabel(f'σ₁ (largest) → σ{n} (smallest)', fontsize=12)
-    ax2.set_ylabel('Singular Value', fontsize=12)
-    ax2.set_title('Singular Values (Log)', fontsize=14, fontweight='bold')
-    ax2.set_xticks(range(1, n + 1))
-    ax2.grid(True, alpha=0.3, axis='y')
-    
-    plt.tight_layout()
-    plt.savefig(output_path, dpi=300)
-    plt.close()
+
+    fig, ax = plt.subplots(figsize=(6, 4), dpi=300)
+
+    ax.semilogy(
+        range(1, n + 1),
+        s,
+        marker='o',
+        linestyle='-',
+        linewidth=1.2,
+        markersize=4,
+    )
+
+    ax.set_xlabel('Component', fontsize=11)
+    ax.set_ylabel('Singular value ($\sigma_i$)', fontsize=11)
+    ax.set_title('Singular value spectrum', fontsize=12)
+
+    ax.set_xticks(range(1, n + 1))
+    ax.grid(True, which='both', axis='y', alpha=0.3)
+
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=300)
+    plt.close(fig)
+
 
 
 def plot_reconstruction_errors(x_lambdas: np.ndarray, y_errors: list, 
@@ -564,7 +561,6 @@ def main():
     lcurve_path = args.out / "lcurve.svg"
     try:
         fig_lcurve, ax_lcurve = lcurve_solver.plot_L_curve(scatter_plot=5, scatter_annotate=True)
-        fig_lcurve.tight_layout()
         fig_lcurve.savefig(lcurve_path, dpi=300)
         plt.close(fig_lcurve)
         print(f"   Saved: {lcurve_path}")
@@ -577,7 +573,6 @@ def main():
     # Plot L-curve curvature
     curvature_path = args.out / "lcurve_curvature.svg"
     fig_curv, ax_curv = lcurve_solver.plot_curvature()
-    fig_curv.tight_layout()
     fig_curv.savefig(curvature_path, dpi=300)
     plt.close(fig_curv)
     print(f"   Saved: {curvature_path}")
@@ -585,7 +580,6 @@ def main():
     # Plot GCV curve
     gcv_path = args.out / "gcv_curve.svg"
     fig_gcv, ax_gcv = gcv_solver.plot_gcv()
-    fig_gcv.tight_layout()
     fig_gcv.savefig(gcv_path, dpi=300)
     plt.close(fig_gcv)
     print(f"   Saved: {gcv_path}")

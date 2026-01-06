@@ -1,13 +1,13 @@
 {
   "mesh": "./mesh.msh",
-  "output": "./cases_s1=0p33_s2=4p1",
+  "output": "./cases_s1=4p1_s2=0p33",
   "volumes": [
     {
-      "sigma": 4.1,
+      "sigma": 0.33,
       "name": "ext"
     },
     {
-      "sigma": 0.33,
+      "sigma": 4.1,
       "name": "int"
     }
   ],
