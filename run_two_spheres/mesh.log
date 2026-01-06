@@ -3,7 +3,7 @@
    XAO: /Users/brisarojas/Desktop/phantom_simulation/run_two_spheres/model.xao
    OUT: /Users/brisarojas/Desktop/phantom_simulation/run_two_spheres/mesh.msh
 Info    : Running '/Users/brisarojas/micromamba/envs/env/bin/gmsh /Users/brisarojas/Desktop/phantom_simulation/run_two_spheres/spheres_meshing.geo -v 4 -' [Gmsh 4.15.0, 1 node, max. 1 thread]
-Info    : Started on Sun Jan  4 21:49:51 2026
+Info    : Started on Tue Jan  6 04:50:32 2026
 Info    : Reading '/Users/brisarojas/Desktop/phantom_simulation/run_two_spheres/spheres_meshing.geo'...
 Info    : Reading '/Users/brisarojas/Desktop/phantom_simulation/run_two_spheres/model.xao'...
 Info    : Done reading '/Users/brisarojas/Desktop/phantom_simulation/run_two_spheres/model.xao'
@@ -12,21 +12,21 @@ Info    : Meshing 1D...
 Info    : [ 20%] Meshing curve 2 (TrimmedCurve)
 Info    : [ 50%] Meshing curve 5 (TrimmedCurve)
 Info    : [ 80%] Meshing curve 8 (TrimmedCurve)
-Info    : Done meshing 1D (Wall 0.0209855s, CPU 0.020785s)
+Info    : Done meshing 1D (Wall 0.0208911s, CPU 0.020646s)
 Info    : Meshing 2D...
 Info    : [  0%] Meshing surface 1 (BSpline surface, Frontal-Delaunay)
 Info    : [ 40%] Meshing surface 2 (BSpline surface, Frontal-Delaunay)
 Info    : [ 70%] Meshing surface 3 (BSpline surface, Frontal-Delaunay)
-Info    : Done meshing 2D (Wall 1.04141s, CPU 1.03633s)
+Info    : Done meshing 2D (Wall 1.05753s, CPU 1.04726s)
 Info    : Meshing 3D...
 Info    : 3D Meshing 2 volumes with 1 connected component
 Info    : Tetrahedrizing 8491 nodes...
-Info    : Done tetrahedrizing 8499 nodes (Wall 0.0367735s, CPU 0.036048s)
+Info    : Done tetrahedrizing 8499 nodes (Wall 0.0378561s, CPU 0.036605s)
 Info    : Reconstructing mesh...
 Info    :  - Creating surface mesh
 Info    :  - Identifying boundary edges
 Info    :  - Recovering boundary
-Info    : Done reconstructing mesh (Wall 0.0897449s, CPU 0.087059s)
+Info    : Done reconstructing mesh (Wall 0.0894267s, CPU 0.085678s)
 Info    : Found volume 1
 Info    : Found volume 2
 Info    : Found void region
@@ -79,9 +79,9 @@ Info    : It. 22500 - 22497 nodes created - worst tet radius 1.00274 (nodes remo
 Info    : 3D refinement terminated (31172 nodes total):
 Info    :  - 0 Delaunay cavities modified for star shapeness
 Info    :  - 3 nodes could not be inserted
-Info    :  - 183119 tetrahedra created in 0.666237 sec. (274855 tets/s)
+Info    :  - 183119 tetrahedra created in 0.634646 sec. (288537 tets/s)
 Info    : 0 node relocations
-Info    : Done meshing 3D (Wall 1.35675s, CPU 1.33941s)
+Info    : Done meshing 3D (Wall 1.33084s, CPU 1.31007s)
 Info    : Optimizing mesh...
 Info    : Optimizing volume 1
 Info    : Optimization starts (volume = 0.00214156) with worst = 0.00261031 / average = 0.78099:
@@ -95,8 +95,8 @@ Info    : 0.60 < quality < 0.70 :     15203 elements
 Info    : 0.70 < quality < 0.80 :     35346 elements
 Info    : 0.80 < quality < 0.90 :     58921 elements
 Info    : 0.90 < quality < 1.00 :     30778 elements
-Info    : 3055 edge swaps, 88 node relocations (volume = 0.00214156): worst = 0.260339 / average = 0.793246 (Wall 0.0316512s, CPU 0.031444s)
-Info    : 3067 edge swaps, 89 node relocations (volume = 0.00214156): worst = 0.296623 / average = 0.79329 (Wall 0.0375639s, CPU 0.037235s)
+Info    : 3055 edge swaps, 88 node relocations (volume = 0.00214156): worst = 0.260339 / average = 0.793246 (Wall 0.0324632s, CPU 0.032305s)
+Info    : 3067 edge swaps, 89 node relocations (volume = 0.00214156): worst = 0.296623 / average = 0.79329 (Wall 0.0380285s, CPU 0.037821s)
 Info    : No ill-shaped tets in the mesh :-)
 Info    : 0.00 < quality < 0.10 :         0 elements
 Info    : 0.10 < quality < 0.20 :         0 elements
@@ -120,8 +120,8 @@ Info    : 0.60 < quality < 0.70 :       879 elements
 Info    : 0.70 < quality < 0.80 :      2223 elements
 Info    : 0.80 < quality < 0.90 :     10448 elements
 Info    : 0.90 < quality < 1.00 :      9929 elements
-Info    : 336 edge swaps, 0 node relocations (volume = 0.000267675): worst = 0.137557 / average = 0.85144 (Wall 0.00262162s, CPU 0.002581s)
-Info    : 348 edge swaps, 0 node relocations (volume = 0.000267675): worst = 0.137557 / average = 0.851461 (Wall 0.00317888s, CPU 0.003126s)
+Info    : 336 edge swaps, 0 node relocations (volume = 0.000267675): worst = 0.137557 / average = 0.85144 (Wall 0.00261367s, CPU 0.002563s)
+Info    : 348 edge swaps, 0 node relocations (volume = 0.000267675): worst = 0.137557 / average = 0.851461 (Wall 0.00318592s, CPU 0.003128s)
 Info    : No ill-shaped tets in the mesh :-)
 Info    : 0.00 < quality < 0.10 :         0 elements
 Info    : 0.10 < quality < 0.20 :         2 elements
@@ -133,7 +133,7 @@ Info    : 0.60 < quality < 0.70 :       818 elements
 Info    : 0.70 < quality < 0.80 :      2214 elements
 Info    : 0.80 < quality < 0.90 :     10526 elements
 Info    : 0.90 < quality < 1.00 :      9932 elements
-Info    : Done optimizing mesh (Wall 0.135255s, CPU 0.131889s)
+Info    : Done optimizing mesh (Wall 0.141566s, CPU 0.136256s)
 Info    : Meshing order 2 (curvilinear on)...
 Info    : [  0%] Meshing curve 1 order 2
 Info    : [ 10%] Meshing curve 2 order 2
@@ -149,11 +149,11 @@ Info    : [ 80%] Meshing surface 2 order 2
 Info    : [ 80%] Meshing surface 3 order 2
 Info    : [ 90%] Meshing volume 1 order 2
 Info    : [100%] Meshing volume 2 order 2
-Info    : Done meshing order 2 (Wall 2.50416s, CPU 2.47807s)
+Info    : Done meshing order 2 (Wall 2.46309s, CPU 2.41605s)
 Info    : 246982 nodes 197135 elements
 Info    : Writing '/Users/brisarojas/Desktop/phantom_simulation/run_two_spheres/mesh.msh'...
 Info    : Done writing '/Users/brisarojas/Desktop/phantom_simulation/run_two_spheres/mesh.msh'
 >> Mesh written
 Info    : Done reading '/Users/brisarojas/Desktop/phantom_simulation/run_two_spheres/spheres_meshing.geo'
-Info    : Stopped on Sun Jan  4 21:49:56 2026 (From start: Wall 5.68664s, CPU 5.6502s)
+Info    : Stopped on Tue Jan  6 04:50:37 2026 (From start: Wall 5.6456s, CPU 5.56424s)
 ✓ OK. Mesh created: /Users/brisarojas/Desktop/phantom_simulation/run_two_spheres/mesh.msh
