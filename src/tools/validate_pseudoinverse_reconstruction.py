@@ -93,53 +93,60 @@ def add_noise(y: np.ndarray, noise_level: float, rng: np.random.Generator) -> np
 
 
 def validate_reconstruction(F: np.ndarray, test_files: List[Path], manifest: Dict,
-                            noise_level: float = 0.0, seed: int = None) -> List[Dict]:
+                            noise_level: float = 0.0, seed: int = None, lambda_reg: float = None) -> List[Dict]:
     """Validate reconstruction for all test cases."""
     global deleted_indices
-    
-    # Remove deleted columns from F
-    if deleted_indices:
-        F = np.delete(F, deleted_indices, axis=1)
-    
-    # Compute pseudoinverse
-    F_pinv = np.linalg.pinv(F)
-    cond_F = np.linalg.cond(F)
-    
-    # Setup random generator for noise
+
+    n_cases = F.shape[1]
     rng = np.random.default_rng(seed)
-    
+
+    # Choose reconstruction method
+    if lambda_reg is not None:
+        # Regularized pseudoinverse with identity L
+        FTF = F.T @ F
+        LTL = np.eye(n_cases)
+        A = FTF + (lambda_reg ** 2) * LTL
+        F_pinv = np.linalg.solve(A, F.T)
+        cond_F = np.linalg.cond(A)
+        print(f"Using regularized pseudoinverse with lambda={lambda_reg}")
+    else:
+        # Standard pseudoinverse
+        F_pinv = np.linalg.pinv(F)
+        cond_F = np.linalg.cond(F)
+        print(f"Using standard pseudoinverse")
+
     print(f"F shape: {F.shape}")
     print(f"F⁺ shape: {F_pinv.shape}")
     print(f"κ(F): {cond_F:.2e}")
     if noise_level > 0:
         print(f"Noise level: {noise_level}%")
-    
+
     results = []
     manifest_cases = {c['name']: c for c in manifest['cases']}
-    
+
     for test_file in test_files:
         name = test_file.stem
-        
+
         if name not in manifest_cases:
             print(f"  SKIP: {name} (not in manifest)")
             continue
-        
+
         y_clean = np.load(test_file)
         y = add_noise(y_clean, noise_level, rng)  # Add noise to measurements
         x_recon = F_pinv @ y
         x_true = extract_x_true(manifest_cases[name])
-        
+
         errors = compute_errors(x_true, x_recon)
-        
+
         results.append({
             'name': name,
             'x_true': x_true.tolist(),
             'x_recon': x_recon.tolist(),
             'errors': errors,
         })
-        
+
         print(f"  {name}: RMSE={errors['rmse']:.4f}, RelErr={errors['relative_error']*100:.1f}%")
-    
+
     return results, cond_F
 
 
@@ -253,6 +260,8 @@ def main():
                         help='Noise level as %% of signal std (e.g., 5 for 5%% noise)')
     parser.add_argument('--seed', type=int, default=None,
                         help='Random seed for reproducible noise')
+    parser.add_argument('--lambda', type=float, default=None,
+                        help='Regularization parameter lambda. If not provided, uses pseudoinverse.')
     
     args = parser.parse_args()
     
@@ -284,8 +293,11 @@ def main():
     print("VALIDATING RECONSTRUCTION")
     print("="*50)
     
+    # 'lambda' is a reserved keyword, so use getattr
+    lambda_value = getattr(args, 'lambda')
     results, cond_F = validate_reconstruction(F, test_files, manifest,
-                                               noise_level=args.noise, seed=args.seed)
+                                               noise_level=args.noise, seed=args.seed,
+                                               lambda_reg=lambda_value)
     
     if not results:
         print("\nERROR: No matching cases found!")

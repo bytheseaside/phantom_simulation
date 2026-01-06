@@ -562,11 +562,17 @@ def main():
     
     # Plot L-curve with annotated scatter points (library's built-in feature)
     lcurve_path = args.out / "lcurve.svg"
-    fig_lcurve, ax_lcurve = lcurve_solver.plot_L_curve(scatter_plot=5, scatter_annotate=True)
-    fig_lcurve.tight_layout()
-    fig_lcurve.savefig(lcurve_path, dpi=300)
-    plt.close(fig_lcurve)
-    print(f"   Saved: {lcurve_path}")
+    try:
+        fig_lcurve, ax_lcurve = lcurve_solver.plot_L_curve(scatter_plot=5, scatter_annotate=True)
+        fig_lcurve.tight_layout()
+        fig_lcurve.savefig(lcurve_path, dpi=300)
+        plt.close(fig_lcurve)
+        print(f"   Saved: {lcurve_path}")
+    except ValueError as e:
+        if "Maximum allowed size exceeded" in str(e):
+            print(f"   Skipping L-curve plot due to excessive array size: {e}")
+        else:
+            raise
     
     # Plot L-curve curvature
     curvature_path = args.out / "lcurve_curvature.svg"
