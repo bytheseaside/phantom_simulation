@@ -278,13 +278,14 @@ def plot_correlation_heatmap(corr_matrix: np.ndarray, case_names: list, output_p
 
 
 def plot_singular_values(singular_values: list, output_path: Path):
-    """Plot singular value spectrum (scree plot)."""
+    """Plot singular value spectrum (scree plot) on a linear scale."""
     s = np.asarray(singular_values)
     n = len(s)
 
     fig, ax = plt.subplots(figsize=(6, 4), dpi=300)
 
-    ax.semilogy(
+    # Changed from ax.semilogy to ax.plot for a linear scale
+    ax.plot(
         range(1, n + 1),
         s,
         marker='o',
@@ -298,12 +299,10 @@ def plot_singular_values(singular_values: list, output_path: Path):
     ax.set_title('Singular value spectrum', fontsize=12)
 
     ax.set_xticks(range(1, n + 1))
-    ax.grid(True, which='both', axis='y', alpha=0.3)
+    ax.grid(True, linestyle='--', alpha=0.3)
 
-    fig.tight_layout()
     fig.savefig(output_path, dpi=300)
     plt.close(fig)
-
 
 
 def plot_reconstruction_errors(x_lambdas: np.ndarray, y_errors: list, 
@@ -476,7 +475,7 @@ def main():
     # Use columns of F as test cases
     # Each column F[:, j] = F @ e_j where e_j is unit vector (electrode j active)
     # So x_true = e_j (known!) and y = F[:, j] (no noise)
-    print(f"   Using {n_cases} columns of F as test cases (y = F[:, j], x_true = e_j)...")
+    print(f"   Generating {n_cases} random x_true test cases (y = F @ x_true)...")
     test_cases = []
     all_errors = []
     reg_results = []  # Store cherab regularization results
@@ -485,13 +484,14 @@ def main():
     test_data = []  # (x_true, y) pairs for error computation
     
     for j in range(n_cases):
-        # x_true is unit vector with 1 at position j
-        x_true = np.zeros(n_cases)
-        x_true[j] = 1.0
-        # y is the j-th column of F (no noise)
-        y = F[:, j].copy()
-        
+        # Random ground-truth vector for this test case
+        x_true = np.random.randn(n_cases)
+
+        # Measurement vector y = F @ x_true (no additional noise)
+        y = F @ x_true
+
         test_data.append((x_true, y))
+    
     
     # Compute GCV and L-curve using cherab-inversion (uses optimization, not grid search)
     print(f"   Computing GCV and L-curve for {n_cases} cases (using cherab-inversion)...")
