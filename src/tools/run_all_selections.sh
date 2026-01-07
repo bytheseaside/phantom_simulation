@@ -38,10 +38,10 @@ echo "Column Selection: Running all algorithms"
 echo "============================================================"
 echo "Algorithms: ${ALGORITHMS[*]}"
 echo ""
-TARGET_COLS=6
+TARGET_COLS=8
 
 
-MATRIX="$PROJECT_ROOT/run_phantom/F.npy"
+MATRIX="$PROJECT_ROOT/run_phantom/full_F/F.npy"
 if [[ -f "$MATRIX" ]]; then
     echo ">>> Matrix: $MATRIX"
     echo ""
