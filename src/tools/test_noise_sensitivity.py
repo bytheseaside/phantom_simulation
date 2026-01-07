@@ -10,6 +10,7 @@ Personal utility script:
 - Reconstruct x_hat = B y_noisy
 - Compute relative error per case, print summary
 - Optional sweep: mean relative error vs mu (sigma fixed)
+- NEW: general wide-range mu sweep (linear OR log), with labeled reference markers
 """
 
 from pathlib import Path
@@ -30,7 +31,11 @@ def rel_error(x_true, x_hat, eps=1e-15):
 def generate_cases(Ne, n_dense, n_sparse, seed=0, signed_sparse=False):
     rng = np.random.default_rng(seed)
 
-    x_dense = rng.normal(0.0, 1.0, size=(Ne, n_dense)) if n_dense > 0 else np.array([]).reshape(Ne, 0)
+    x_dense = (
+        rng.normal(0.0, 1.0, size=(Ne, n_dense))
+        if n_dense > 0
+        else np.array([]).reshape(Ne, 0)
+    )
 
     x_sparse = np.zeros((Ne, n_sparse))
     for j in range(n_sparse):
@@ -74,11 +79,21 @@ def print_summary_block(title: str, A_shape, mu, sigma, stats_dense, stats_spars
     print("-" * 90)
 
     def row(name, st):
-        vals = [name, str(st["N"]), _fmt(st["mean"]), _fmt(st["median"]), _fmt(st["std"]), _fmt(st["p95"]), _fmt(st["max"])]
+        vals = [
+            name,
+            str(st["N"]),
+            _fmt(st["mean"]),
+            _fmt(st["median"]),
+            _fmt(st["std"]),
+            _fmt(st["p95"]),
+            _fmt(st["max"]),
+        ]
         return "".join(f"{v:<{w}}" for v, w in zip(vals, colw))
 
-    if stats_dense["N"] > 0: print(row("Dense", stats_dense))
-    if stats_sparse["N"] > 0: print(row("Sparse", stats_sparse))
+    if stats_dense["N"] > 0:
+        print(row("Dense", stats_dense))
+    if stats_sparse["N"] > 0:
+        print(row("Sparse", stats_sparse))
     print("=" * 90 + "\n")
 
 
@@ -90,7 +105,10 @@ def solve_with_fixed_Z(A, B, X, mu, sigma, Z):
     y_noisy = y + noise
     x_hat = B @ y_noisy
     err = rel_error(X, x_hat)
-    nsr = float(np.mean(np.linalg.norm(noise, axis=0)) / (np.mean(np.linalg.norm(y, axis=0)) + 1e-18))
+    nsr = float(
+        np.mean(np.linalg.norm(noise, axis=0))
+        / (np.mean(np.linalg.norm(y, axis=0)) + 1e-18)
+    )
     return err, nsr
 
 
@@ -102,20 +120,57 @@ def make_fixed_Z(Nm, n_cases, seed):
 # ----------------------------
 # Plot helpers
 # ----------------------------
-def save_case_error_plot(err_dense, err_sparse, mean_dense, mean_sparse, nsr_d, nsr_s, out_path: Path, Nm, Ne, mu, sigma, logy=False):
+def save_case_error_plot(
+    err_dense,
+    err_sparse,
+    mean_dense,
+    mean_sparse,
+    nsr_d,
+    nsr_s,
+    out_path: Path,
+    Nm,
+    Ne,
+    mu,
+    sigma,
+    logy=False,
+):
     fig, ax = plt.subplots(figsize=(10, 6), dpi=160)
 
     if err_dense is not None and err_dense.size > 0:
-        (l1,) = ax.plot(err_dense, label=rf"$\epsilon_{{\mathrm{{dense}}}}$ (NSR≈{_fmt(nsr_d)})", alpha=0.85, lw=1.5)
-        ax.axhline(mean_dense, color=l1.get_color(), ls="--", alpha=0.45, label=r"$\overline{\epsilon}_{\mathrm{dense}}$")
+        (l1,) = ax.plot(
+            err_dense,
+            label=rf"$\epsilon_{{\mathrm{{dense}}}}$ (NSR≈{_fmt(nsr_d)})",
+            alpha=0.85,
+            lw=1.5,
+        )
+        ax.axhline(
+            mean_dense,
+            color=l1.get_color(),
+            ls="--",
+            alpha=0.45,
+            label=r"$\overline{\epsilon}_{\mathrm{dense}}$",
+        )
 
     if err_sparse is not None and err_sparse.size > 0:
-        (l2,) = ax.plot(err_sparse, label=rf"$\epsilon_{{\mathrm{{sparse}}}}$ (NSR≈{_fmt(nsr_s)})", alpha=0.85, lw=1.5)
-        ax.axhline(mean_sparse, color=l2.get_color(), ls="--", alpha=0.45, label=r"$\overline{\epsilon}_{\mathrm{sparse}}$")
+        (l2,) = ax.plot(
+            err_sparse,
+            label=rf"$\epsilon_{{\mathrm{{sparse}}}}$ (NSR≈{_fmt(nsr_s)})",
+            alpha=0.85,
+            lw=1.5,
+        )
+        ax.axhline(
+            mean_sparse,
+            color=l2.get_color(),
+            ls="--",
+            alpha=0.45,
+            label=r"$\overline{\epsilon}_{\mathrm{sparse}}$",
+        )
 
     ax.set_xlabel("Test case index")
     ax.set_ylabel(r"Relative error  $\|x-\hat{x}\|_2 / \|x\|_2$")
-    ax.set_title(rf"Noise-only reconstruction error (A: {Nm}×{Ne})" + "\n" + rf"$\mu$={_fmt(mu)}, $\sigma$={_fmt(sigma)}")
+    ax.set_title(
+        rf"Noise-only reconstruction error (A: {Nm}×{Ne})" + "\n" + rf"$\mu$={_fmt(mu)}, $\sigma$={_fmt(sigma)}"
+    )
     ax.grid(True, which="both", linestyle=":", alpha=0.6)
 
     if logy:
@@ -123,11 +178,19 @@ def save_case_error_plot(err_dense, err_sparse, mean_dense, mean_sparse, nsr_d, 
 
     handles, labels = ax.get_legend_handles_labels()
     if handles:
-        fig.legend(handles, labels, loc="lower center", ncol=2, frameon=True, bbox_to_anchor=(0.5, 0.02), fontsize=9)
+        fig.legend(
+            handles,
+            labels,
+            loc="lower center",
+            ncol=2,
+            frameon=True,
+            bbox_to_anchor=(0.5, 0.02),
+            fontsize=9,
+        )
         fig.tight_layout(rect=[0, 0.12, 1, 1])
     else:
         fig.tight_layout()
-        
+
     fig.savefig(out_path, bbox_inches="tight")
     plt.close(fig)
 
@@ -143,11 +206,14 @@ def save_mu_sweep_plot(mus, mean_ed, mean_es, out_path: Path, sigma_fixed: float
     if sigma_min is not None and mus.min() <= sigma_min <= mus.max():
         ax.axvline(sigma_min, ls="--", lw=1.2, color="black", alpha=0.35)
         y_max = ax.get_ylim()[1]
-        ax.text(sigma_min, y_max*0.9, r"$\mu = \sigma_{\min}$", rotation=90, va="top", ha="right", alpha=0.55, fontsize=10)
+        ax.text(
+            sigma_min, y_max * 0.9, r"$\mu = \sigma_{\min}$",
+            rotation=90, va="top", ha="right", alpha=0.55, fontsize=10
+        )
 
     ax.set_xlabel(r"Noise mean ($\mu$)")
     ax.set_ylabel("Mean relative error")
-    ax.set_title(f"Noise Sensitivity Sweep\n" + rf"$\sigma$ = {_fmt(sigma_fixed)}")
+    ax.set_title("Noise Sensitivity Sweep\n" + rf"$\sigma$ = {_fmt(sigma_fixed)}")
     ax.grid(True, which="both", linestyle=":", alpha=0.6)
 
     if logx:
@@ -155,7 +221,11 @@ def save_mu_sweep_plot(mus, mean_ed, mean_es, out_path: Path, sigma_fixed: float
 
     handles, labels = ax.get_legend_handles_labels()
     if handles:
-        fig.legend(handles, labels, loc="lower center", ncol=2, frameon=True, bbox_to_anchor=(0.5, 0.02), fontsize=9)
+        fig.legend(
+            handles, labels,
+            loc="lower center", ncol=2, frameon=True,
+            bbox_to_anchor=(0.5, 0.02), fontsize=9
+        )
         fig.tight_layout(rect=[0, 0.12, 1, 1])
     else:
         fig.tight_layout()
@@ -163,6 +233,106 @@ def save_mu_sweep_plot(mus, mean_ed, mean_es, out_path: Path, sigma_fixed: float
     fig.savefig(out_path, bbox_inches="tight")
     plt.close(fig)
 
+def save_general_mu_sweep_plot(
+    mus,
+    mean_ed,
+    mean_es,
+    out_path: Path,
+    sigma_fixed: float,
+    markers: list[float],
+    logx: bool,
+):
+    fig, ax = plt.subplots(figsize=(10, 6), dpi=200)
+
+    dense_line = None
+    sparse_line = None
+
+    if mean_ed.size > 0:
+        (dense_line,) = ax.plot(
+            mus, mean_ed,
+            label=r"$\epsilon_{\mathrm{dense}}$ (mean)",
+            lw=2.0, alpha=0.9
+        )
+    if mean_es.size > 0:
+        (sparse_line,) = ax.plot(
+            mus, mean_es,
+            label=r"$\epsilon_{\mathrm{sparse}}$ (mean)",
+            lw=2.0, alpha=0.9
+        )
+
+    # --- Marker points + staggered labels (avoid overlap) ---
+    # Alternate label placement and increase offset as we move through markers
+    bbox_kw = dict(boxstyle="round,pad=0.2", fc="white", ec="none", alpha=0.75)
+    arrow_kw = dict(arrowstyle="-", lw=0.8, alpha=0.35)
+
+    # keep only markers within range
+    markers_in = [m for m in markers if (mus.min() <= m <= mus.max())]
+
+    for i, m in enumerate(markers_in):
+        # base offsets: alternate up/down, and increase with i to separate crowded zones
+        base_dx = 2
+        base_dy =  12
+
+        # Dense
+        if dense_line is not None:
+            yd = float(np.interp(m, mus, mean_ed))
+            ax.plot([m], [yd], marker="x", ms=7, mew=1.6,
+                    color=dense_line.get_color(), ls="None")
+
+            # alternate: above for even, below for odd
+            ax.annotate(
+                f"{yd:.2e}",
+                xy=(m, yd),
+                xytext=(base_dx, -base_dy),
+                textcoords="offset points",
+                color=dense_line.get_color(),
+                fontsize=9,
+                bbox=bbox_kw,
+                arrowprops=arrow_kw,
+                ha="left",
+                va="bottom",
+            )
+
+        # Sparse (shift opposite direction to avoid stacking with dense label)
+        if sparse_line is not None:
+            ys = float(np.interp(m, mus, mean_es))
+            ax.plot([m], [ys], marker="x", ms=7, mew=1.6,
+                    color=sparse_line.get_color(), ls="None")
+
+            ax.annotate(
+                f"{ys:.2e}",
+                xy=(m, ys),
+                xytext=(-base_dx, base_dy),
+                textcoords="offset points",
+                color=sparse_line.get_color(),
+                fontsize=9,
+                bbox=bbox_kw,
+                arrowprops=arrow_kw,
+                ha="left",
+                va="top",
+            )
+
+    ax.set_xlabel(r"Noise mean ($\mu$)")
+    ax.set_ylabel("Mean relative error")
+    ax.set_title("General μ Sweep (wide range)\n" + rf"$\sigma$ = {_fmt(sigma_fixed)}")
+    ax.grid(True, which="both", linestyle=":", alpha=0.6)
+
+    if logx:
+        ax.set_xscale("log")
+
+    handles, labels = ax.get_legend_handles_labels()
+    if handles:
+        fig.legend(
+            handles, labels,
+            loc="lower center", ncol=2, frameon=True,
+            bbox_to_anchor=(0.5, 0.02), fontsize=9
+        )
+        fig.tight_layout(rect=[0, 0.12, 1, 1])
+    else:
+        fig.tight_layout()
+
+    fig.savefig(out_path, bbox_inches="tight")
+    plt.close(fig)
 
 # ----------------------------
 # Main
@@ -176,7 +346,7 @@ def main():
 
     # ====== USER CONSTANTS (edit here) ======
     N_DENSE = 250
-    N_SPARSE = 250 
+    N_SPARSE = 250
     X_SEED = 3243
     SIGNED_SPARSE = True
 
@@ -185,16 +355,25 @@ def main():
     SIGMA = 1e-6
     LOGY_CASE_PLOT = False
 
-    # Sweep config
+    # Sweep config (local window around sigma_min)
     DO_MU_SWEEP = True
-    SIGMA_MIN_FOR_VLINE = 0.01441493471008068 # sigma singular value threshold SIGMA, not std...
-    # SIGMA_MIN_FOR_VLINE = 0.0022838397871554035
+    SIGMA_MIN_FOR_VLINE = 0.01441493471008068  # NOTE: singular value (not noise sigma)
     MU_SWEEP_A = SIGMA_MIN_FOR_VLINE - 0.005
     MU_SWEEP_B = SIGMA_MIN_FOR_VLINE + 0.005
     MU_SWEEP_N = 100
     MU_SWEEP_LOG = False
+    SWEEP_OUT = outPath.with_name(args.A_path.stem + "_mu_sweep.png")
 
-    SWEEP_OUT =  outPath.with_name(args.A_path.stem + "_mu_sweep.png")
+    # General sweep (wide range)
+    DO_GENERAL_MU_SWEEP = True
+    GENERAL_MU_A = 1e-5
+    GENERAL_MU_B = 1e-2
+    GENERAL_MU_N = 120
+    GENERAL_MU_LOG = True
+    GENERAL_SWEEP_OUT = outPath.with_name(args.A_path.stem + "_mu_sweep_general.png")
+
+    # Marker mus to annotate (must be within [GENERAL_MU_A, GENERAL_MU_B] to show)
+    GENERAL_MARKERS = [1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2]
     # =======================================
 
     # Load + pinv
@@ -225,10 +404,15 @@ def main():
         out_path=outPath, Nm=Nm, Ne=Ne,
         mu=MU, sigma=SIGMA, logy=LOGY_CASE_PLOT
     )
+    print(f"Saved case-error plot to: {outPath}")
 
-    # ---- Optional MU sweep ----
+    # ---- Optional local MU sweep ----
     if DO_MU_SWEEP:
-        mus = np.logspace(np.log10(MU_SWEEP_A), np.log10(MU_SWEEP_B), MU_SWEEP_N) if MU_SWEEP_LOG else np.linspace(MU_SWEEP_A, MU_SWEEP_B, MU_SWEEP_N)
+        mus = (
+            np.logspace(np.log10(MU_SWEEP_A), np.log10(MU_SWEEP_B), MU_SWEEP_N)
+            if MU_SWEEP_LOG
+            else np.linspace(MU_SWEEP_A, MU_SWEEP_B, MU_SWEEP_N)
+        )
 
         m_ed, m_es = [], []
         for mu_i in mus:
@@ -238,13 +422,51 @@ def main():
             m_es.append(np.mean(es) if es.size > 0 else None)
 
         save_mu_sweep_plot(
-            mus=mus, 
-            mean_ed=np.array([x for x in m_ed if x is not None]), 
+            mus=mus,
+            mean_ed=np.array([x for x in m_ed if x is not None]),
             mean_es=np.array([x for x in m_es if x is not None]),
-            out_path=SWEEP_OUT, sigma_fixed=SIGMA, 
-            sigma_min=SIGMA_MIN_FOR_VLINE, logx=MU_SWEEP_LOG
+            out_path=SWEEP_OUT,
+            sigma_fixed=SIGMA,
+            sigma_min=SIGMA_MIN_FOR_VLINE,
+            logx=MU_SWEEP_LOG,
         )
         print(f"Saved μ-sweep plot to: {SWEEP_OUT}")
+
+    # ---- General wide-range MU sweep ----
+    if DO_GENERAL_MU_SWEEP:
+        if GENERAL_MU_LOG:
+            if GENERAL_MU_A <= 0 or GENERAL_MU_B <= 0:
+                raise ValueError("For GENERAL_MU_LOG=True, GENERAL_MU_A and GENERAL_MU_B must be > 0.")
+            mus_g = np.logspace(np.log10(GENERAL_MU_A), np.log10(GENERAL_MU_B), GENERAL_MU_N)
+        else:
+            mus_g = np.linspace(GENERAL_MU_A, GENERAL_MU_B, GENERAL_MU_N)
+
+        mean_ed_g, mean_es_g = [], []
+        for mu_i in mus_g:
+            ed, _ = solve_with_fixed_Z(A, B, x_dense, float(mu_i), SIGMA, Zd)
+            es, _ = solve_with_fixed_Z(A, B, x_sparse, float(mu_i), SIGMA, Zs)
+            mean_ed_g.append(float(np.mean(ed)) if ed.size > 0 else np.nan)
+            mean_es_g.append(float(np.mean(es)) if es.size > 0 else np.nan)
+
+        mean_ed_g = np.array(mean_ed_g)
+        mean_es_g = np.array(mean_es_g)
+
+        save_general_mu_sweep_plot(
+            mus=mus_g,
+            mean_ed=mean_ed_g,
+            mean_es=mean_es_g,
+            out_path=GENERAL_SWEEP_OUT,
+            sigma_fixed=SIGMA,
+            markers=GENERAL_MARKERS,
+            logx=GENERAL_MU_LOG,
+        )
+        print(f"Saved GENERAL μ-sweep plot to: {GENERAL_SWEEP_OUT}")
+        print(f"General μ range: [{_fmt(float(mus_g.min()))}, {_fmt(float(mus_g.max()))}] "
+              f"({GENERAL_MU_N} points, log={GENERAL_MU_LOG})")
+
+    # Optional: reprint baseline summary at end (nice for long sweeps)
+    print_summary_block("FINAL SUMMARY — SINGLE RUN (REFERENCE)", (Nm, Ne), MU, SIGMA, st_dense, st_sparse)
+
 
 if __name__ == "__main__":
     main()

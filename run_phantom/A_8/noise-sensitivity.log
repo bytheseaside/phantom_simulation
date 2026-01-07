@@ -9,4 +9,18 @@ Dense     250      0.003147      0.002956      9.607e-04     0.004761      0.008
 Sparse    250      0.006790      0.007912      0.001164      0.007947      0.007965     
 ==========================================================================================
 
+Saved case-error plot to: /Users/brisarojas/Desktop/phantom_simulation/run_phantom/A_8/A8_noise_case.png
 Saved μ-sweep plot to: /Users/brisarojas/Desktop/phantom_simulation/run_phantom/A_8/A8_mu_sweep.png
+Saved GENERAL μ-sweep plot to: /Users/brisarojas/Desktop/phantom_simulation/run_phantom/A_8/A8_mu_sweep_general.png
+General μ range: [ 1.000e-05,  0.010000] (120 points, log=True)
+
+==========================================================================================
+FINAL SUMMARY — SINGLE RUN (REFERENCE) | A: 21×8
+Noise model in y:  noise = μ + σ Z  with μ= 5.000e-04, σ= 1.000e-06
+------------------------------------------------------------------------------------------
+Family    N       Mean          Median        Std           P95           Max           
+------------------------------------------------------------------------------------------
+Dense     250      0.003147      0.002956      9.607e-04     0.004761      0.008738     
+Sparse    250      0.006790      0.007912      0.001164      0.007947      0.007965     
+==========================================================================================
+
