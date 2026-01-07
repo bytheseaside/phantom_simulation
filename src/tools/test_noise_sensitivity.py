@@ -17,6 +17,7 @@ from pathlib import Path
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
+import json
 
 
 # ----------------------------
@@ -334,6 +335,92 @@ def save_general_mu_sweep_plot(
     fig.savefig(out_path, bbox_inches="tight")
     plt.close(fig)
 
+def embed_reduced_vec_into_full(x_reduced: np.ndarray, full_ne: int, dropped_col_full: int) -> np.ndarray:
+    """
+    x_reduced: shape (full_ne-1,)
+    Returns x_full: shape (full_ne,), inserting 0.0 at dropped_col_full (0-based).
+    """
+    if x_reduced.ndim != 1:
+        raise ValueError(f"x_reduced must be 1D, got shape {x_reduced.shape}")
+    if full_ne <= 0:
+        raise ValueError("full_ne must be positive")
+    if not (0 <= dropped_col_full < full_ne):
+        raise ValueError(f"dropped_col_full out of range: {dropped_col_full} for full_ne={full_ne}")
+    if x_reduced.shape[0] != full_ne - 1:
+        raise ValueError(
+            f"x_reduced length must be full_ne-1 ({full_ne-1}), got {x_reduced.shape[0]}"
+        )
+
+    x_full = np.zeros((full_ne,), dtype=float)
+    keep = [i for i in range(full_ne) if i != dropped_col_full]
+    x_full[np.array(keep)] = x_reduced
+    return x_full
+
+
+def build_dirichlet_from_x_full(x_full: np.ndarray) -> list[dict]:
+    """
+    x_full: shape (full_ne,)
+    Creates 3 dicts per electrode i=1..full_ne:
+      e{i}_T = x_full[i-1]
+      e{i}_R = -x_full[i-1]
+      e{i}_S = 0.0
+    """
+    if x_full.ndim != 1:
+        raise ValueError(f"x_full must be 1D, got shape {x_full.shape}")
+
+    full_ne = int(x_full.shape[0])
+    out: list[dict] = []
+    for i0 in range(full_ne):  # 0-based index
+        ei = i0 + 1            # 1-based name
+        vT = float(x_full[i0])
+        out.append({"name": f"e{ei}_T", "value": vT})
+        out.append({"name": f"e{ei}_R", "value": -vT})
+        out.append({"name": f"e{ei}_S", "value": 0.0})
+    return out
+
+
+def export_manifest_cases_json(
+    out_json_path: Path,
+    x_dense: np.ndarray,
+    x_sparse: np.ndarray,
+    full_ne: int,
+    dropped_col_full: int,
+):
+    """
+    x_dense/x_sparse are in reduced space: shape (full_ne-1, n_cases)
+    Writes:
+      {"cases":[{"name":"test-0001-dense","dirichlet":[...]} , ...]}
+    """
+    cases: list[dict] = []
+    case_id = 1
+
+    def add_family(family: str, X: np.ndarray):
+        nonlocal case_id
+        if X.size == 0:
+            return
+        if X.shape[0] != full_ne - 1:
+            raise ValueError(
+                f"{family}: expected X.shape[0] == full_ne-1 ({full_ne-1}), got {X.shape[0]}"
+            )
+        for j in range(X.shape[1]):
+            x_red = X[:, j]
+            x_full = embed_reduced_vec_into_full(
+                x_reduced=x_red,
+                full_ne=full_ne,
+                dropped_col_full=dropped_col_full,
+            )
+            name = f"test-{case_id:04d}-{family}"  # file-safe
+            cases.append({"name": name, "dirichlet": build_dirichlet_from_x_full(x_full)})
+            case_id += 1
+
+    add_family("dense", x_dense)
+    add_family("sparse", x_sparse)
+
+    payload = {"cases": cases}
+    out_json_path.write_text(json.dumps(payload, indent=2))
+    print(f"Saved manifest cases JSON to: {out_json_path}  (N={len(cases)})")
+
+
 # ----------------------------
 # Main
 # ----------------------------
@@ -374,6 +461,14 @@ def main():
 
     # Marker mus to annotate (must be within [GENERAL_MU_A, GENERAL_MU_B] to show)
     GENERAL_MARKERS = [1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2]
+
+    # ====== EXPORT CONFIG ======
+    # Full simulator expects 9 electrodes e1..e9:
+    FULL_NE = 9
+
+    # You removed one column from the full operator to make the reduced A.
+    # 0-based (numpy) column index in the FULL operator:
+    DROPPED_COL_FULL = 5  # -> corresponds to electrode e6_* in simulator naming
     # =======================================
 
     # Load + pinv
@@ -383,6 +478,30 @@ def main():
 
     # Generate cases
     x_dense, x_sparse = generate_cases(Ne, N_DENSE, N_SPARSE, seed=X_SEED, signed_sparse=SIGNED_SPARSE)
+
+    manifest_path = args.A_path.with_name("manifest_cases.json")
+
+    print("\n[EXPORT] manifest JSON export ENABLED")
+    print(f"[EXPORT] target path: {manifest_path.resolve()}")
+
+    if Ne != FULL_NE - 1:
+        raise ValueError(
+            f"[EXPORT] A has Ne={Ne} columns, but FULL_NE={FULL_NE} implies reduced should have {FULL_NE-1} columns."
+        )
+
+    export_manifest_cases_json(
+        out_json_path=manifest_path,
+        x_dense=x_dense,
+        x_sparse=x_sparse,
+        full_ne=FULL_NE,
+        dropped_col_full=DROPPED_COL_FULL,
+    )
+
+    # sanity check
+    if not manifest_path.exists():
+        raise RuntimeError(f"[EXPORT] Write reported success but file does not exist: {manifest_path.resolve()}")
+    print(f"[EXPORT] file size: {manifest_path.stat().st_size} bytes\n")
+
 
     # Fixed Z for reproducibility
     Zd = make_fixed_Z(Nm, x_dense.shape[1], seed=101)
