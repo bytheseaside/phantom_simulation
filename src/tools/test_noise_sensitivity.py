@@ -240,6 +240,7 @@ def save_general_mu_sweep_plot(
     mean_es,
     out_path: Path,
     sigma_fixed: float,
+    sigma_min: float | None,
     markers: list[float],
     logx: bool,
 ):
@@ -294,6 +295,7 @@ def save_general_mu_sweep_plot(
                 va="bottom",
             )
 
+
         # Sparse (shift opposite direction to avoid stacking with dense label)
         if sparse_line is not None:
             ys = float(np.interp(m, mus, mean_es))
@@ -317,6 +319,28 @@ def save_general_mu_sweep_plot(
     ax.set_ylabel("Mean relative error")
     ax.set_title("General μ Sweep (wide range)\n" + rf"$\sigma$ = {_fmt(sigma_fixed)}")
     ax.grid(True, which="both", linestyle=":", alpha=0.6)
+
+        # --- Vertical reference at smallest singular value ---
+    if sigma_min is not None and mus.min() <= sigma_min <= mus.max():
+        ax.axvline(
+            sigma_min,
+            ls="--",
+            lw=1.2,
+            color="black",
+            alpha=0.35,
+        )
+        y_max = ax.get_ylim()[1]
+        ax.text(
+            sigma_min,
+            y_max * 0.13,
+            r"$\mu = \sigma_{\min}$",
+            rotation=90,
+            va="top",
+            ha="right",
+            alpha=0.55,
+            fontsize=10,
+        )
+
 
     if logx:
         ax.set_xscale("log")
@@ -454,7 +478,7 @@ def main():
     # General sweep (wide range)
     DO_GENERAL_MU_SWEEP = True
     GENERAL_MU_A = 1e-5
-    GENERAL_MU_B = 1e-2
+    GENERAL_MU_B = SIGMA_MIN_FOR_VLINE +  1e-3
     GENERAL_MU_N = 120
     GENERAL_MU_LOG = True
     GENERAL_SWEEP_OUT = outPath.with_name(args.A_path.stem + "_mu_sweep_general.png")
@@ -576,8 +600,10 @@ def main():
             mean_es=mean_es_g,
             out_path=GENERAL_SWEEP_OUT,
             sigma_fixed=SIGMA,
+            sigma_min=SIGMA_MIN_FOR_VLINE,
             markers=GENERAL_MARKERS,
             logx=GENERAL_MU_LOG,
+            
         )
         print(f"Saved GENERAL μ-sweep plot to: {GENERAL_SWEEP_OUT}")
         print(f"General μ range: [{_fmt(float(mus_g.min()))}, {_fmt(float(mus_g.max()))}] "
