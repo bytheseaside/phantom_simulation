@@ -445,8 +445,8 @@ def main():
     # Sweep config (local window around sigma_min)
     DO_MU_SWEEP = True
     SIGMA_MIN_FOR_VLINE = 0.01441493471008068  # NOTE: singular value (not noise sigma)
-    MU_SWEEP_A = SIGMA_MIN_FOR_VLINE - 0.005
-    MU_SWEEP_B = SIGMA_MIN_FOR_VLINE + 0.005
+    MU_SWEEP_A = SIGMA_MIN_FOR_VLINE - 0.01
+    MU_SWEEP_B = SIGMA_MIN_FOR_VLINE + 0.01
     MU_SWEEP_N = 100
     MU_SWEEP_LOG = False
     SWEEP_OUT = outPath.with_name(args.A_path.stem + "_mu_sweep.png")
