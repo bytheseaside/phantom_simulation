@@ -12,11 +12,11 @@ Usage:
   python analyze_transfer_matrix.py --matrix F.npy --L-matrix L.npy --out results/
 
 Outputs:
-  - correlation_heatmap.svg: case correlation matrix
-  - singular_values.svg: singular value spectrum
-  - gcv_curve.svg: GCV score vs lambda (cherab-inversion)
-  - lcurve.svg: L-curve plot (cherab-inversion)
-  - reconstruction_error.svg: reconstruction error vs lambda
+  - correlation_heatmap.png: case correlation matrix
+  - singular_values.png: singular value spectrum
+  - gcv_curve.png: GCV score vs lambda (cherab-inversion)
+  - lcurve.png: L-curve plot (cherab-inversion)
+  - reconstruction_error.png: reconstruction error vs lambda
   - analysis_report.json: full report with all metrics
 """
 import argparse
@@ -294,6 +294,12 @@ def plot_singular_values(singular_values: list, output_path: Path):
         markersize=4,
     )
 
+    # Annotate each dot with its singular value (scientific notation).
+    for i, val in enumerate(s, start=1):
+        ax.annotate(f"{val:.2e}", xy=(i, val), xytext=(4, 0), textcoords='offset points',
+                    fontsize=7, va='center',
+                    path_effects=[path_effects.withStroke(linewidth=2, foreground="white")])
+
     ax.set_xlabel('Component', fontsize=11)
     ax.set_ylabel('Singular value ($\sigma_i$)', fontsize=11)
     ax.set_title('Singular value spectrum', fontsize=12)
@@ -440,7 +446,7 @@ def main():
     print(f"      Frobenius norm: {props['pseudoinverse']['frobenius_norm']:.2e}")
     
     # Plot singular values
-    sv_path = args.out / "singular_values.svg"
+    sv_path = args.out / "singular_values.png"
     plot_singular_values(props['singular_values'], sv_path)
     print(f"   Saved: {sv_path}")
     
@@ -455,7 +461,7 @@ def main():
     print(f"   Min/Max: {corr_stats['min']:.3f} / {corr_stats['max']:.3f}")
     
     # Plot correlation heatmap
-    corr_path = args.out / "correlation_heatmap.svg"
+    corr_path = args.out / "correlation_heatmap.png"
     plot_correlation_heatmap(corr_matrix, case_names, corr_path, annotate=(n_cases <= 12))
     print(f"   Saved: {corr_path}")
     
@@ -558,7 +564,7 @@ def main():
     gcv_solver = reg_results[0]['gcv_solver']
     
     # Plot L-curve with annotated scatter points (library's built-in feature)
-    lcurve_path = args.out / "lcurve.svg"
+    lcurve_path = args.out / "lcurve.png"
     try:
         fig_lcurve, ax_lcurve = lcurve_solver.plot_L_curve(scatter_plot=5, scatter_annotate=True)
         fig_lcurve.savefig(lcurve_path, dpi=300)
@@ -571,21 +577,21 @@ def main():
             raise
     
     # Plot L-curve curvature
-    curvature_path = args.out / "lcurve_curvature.svg"
+    curvature_path = args.out / "lcurve_curvature.png"
     fig_curv, ax_curv = lcurve_solver.plot_curvature()
     fig_curv.savefig(curvature_path, dpi=300)
     plt.close(fig_curv)
     print(f"   Saved: {curvature_path}")
     
     # Plot GCV curve
-    gcv_path = args.out / "gcv_curve.svg"
+    gcv_path = args.out / "gcv_curve.png"
     fig_gcv, ax_gcv = gcv_solver.plot_gcv()
     fig_gcv.savefig(gcv_path, dpi=300)
     plt.close(fig_gcv)
     print(f"   Saved: {gcv_path}")
     
     # Plot reconstruction errors (one subplot per test case, with per-case lambdas)
-    recon_path = args.out / "reconstruction_error.svg"
+    recon_path = args.out / "reconstruction_error.png"
     plot_reconstruction_errors(lambdas, all_errors, gcv_lambdas, lcurve_lambdas, 
                               empirical_lambda, recon_path, mark_valid_range=True,
                               lambda_min_valid=lambda_min_valid, lambda_max_valid=lambda_max_valid)
